@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fluxo de Caixa Diário</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1c2230;--mut:#6b7385;--line:#e4e7ee;--acc:#1f6feb;--pos:#1a7f4b;--neg:#c62828;--negbg:#fdecec}
+@media (prefers-color-scheme:dark){:root{--bg:#12151b;--card:#1b2029;--ink:#e8ebf1;--mut:#98a0b3;--line:#2a313d;--acc:#5a9bff;--pos:#4cc38a;--neg:#ff6b6b;--negbg:#3a1d1f}}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+header{padding:20px 16px 8px;max-width:960px;margin:auto}
+h1{margin:0;font-size:22px}
+header p{margin:4px 0 0;color:var(--mut)}
+main{max-width:960px;margin:auto;padding:8px 16px 40px;display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card h2{margin:0 0 10px;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}
+input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:15px}
+button{padding:9px 14px;border:0;border-radius:8px;background:var(--acc);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+button.ghost{background:transparent;color:var(--mut);border:1px solid var(--line);padding:5px 9px;font-weight:500}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.kpi span{display:block;font-size:12px;color:var(--mut)}
+.kpi b{font-size:20px;font-variant-numeric:tabular-nums}
+.pos{color:var(--pos)}.neg{color:var(--neg)}
+.alert{background:var(--negbg);color:var(--neg);border-radius:10px;padding:10px 12px;font-weight:600;display:none}
+.addrow{display:grid;grid-template-columns:1fr 1.4fr 1fr 1fr auto;gap:8px;align-items:end}
+@media (max-width:600px){.addrow{grid-template-columns:1fr 1fr}.addrow button{grid-column:span 2}}
+.mov{list-style:none;margin:10px 0 0;padding:0}
+.mov li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.mov small{color:var(--mut)}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;color:var(--mut);font-weight:600;position:sticky;top:0;background:var(--card)}
+tr.negrow td{background:var(--negbg)}
+tr.today td{font-weight:700}
+.hint{font-size:12px;color:var(--mut);margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Fluxo de Caixa Diário</h1>
+  <p>Seu saldo projetado dia a dia, com o gasto diário fixo já descontado.</p>
+</header>
+<main>
+  <section class="card">
+    <h2>Configuração</h2>
+    <div class="grid">
+      <div><label>Saldo inicial (R$)</label><input id="saldo" type="number" step="0.01" value="0"></div>
+      <div><label>Gasto diário (R$)</label><input id="diario" type="number" step="0.01" value="21.50"></div>
+      <div><label>Data de início</label><input id="inicio" type="date"></div>
+      <div><label>Dias projetados</label><input id="dias" type="number" min="1" max="730" value="30"></div>
+    </div>
+  </section>
+
+  <div id="alerta" class="alert"></div>
+
+  <section class="kpis">
+    <div class="kpi"><span>Saldo final</span><b id="kFinal">–</b></div>
+    <div class="kpi"><span>Total entradas</span><b id="kEnt" class="pos">–</b></div>
+    <div class="kpi"><span>Gasto diário no período</span><b id="kDia" class="neg">–</b></div>
+    <div class="kpi"><span>Outras saídas</span><b id="kSai" class="neg">–</b></div>
+  </section>
+
+  <section class="card">
+    <h2>Entradas e saídas extras</h2>
+    <form id="form" class="addrow">
+      <div><label>Data</label><input id="mData" type="date" required></div>
+      <div><label>Descrição</label><input id="mDesc" placeholder="Ex.: Salário, aluguel" required></div>
+      <div><label>Tipo</label><select id="mTipo"><option value="in">Entrada</option><option value="out">Saída</option></select></div>
+      <div><label>Valor (R$)</label><input id="mVal" type="number" step="0.01" min="0" required></div>
+      <button type="submit">Adicionar</button>
+    </form>
+    <ul id="lista" class="mov"></ul>
+  </section>
+
+  <section class="card">
+    <h2>Fluxo dia a dia</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Data</th><th>Entradas</th><th>Gasto diário</th><th>Outras saídas</th><th>Saldo</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="hint">Linhas em vermelho = saldo negativo. Os dados ficam salvos só neste navegador.</p>
+  </section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const brl=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const iso=d=>d.toISOString().slice(0,10);
+const fmt=s=>{const[y,m,d]=s.split('-');return d+'/'+m+'/'+y};
+const wd=['dom','seg','ter','qua','qui','sex','sáb'];
+let state={saldo:0,diario:21.5,inicio:iso(new Date()),dias:30,movs:[]};
+try{const s=JSON.parse(localStorage.getItem('fluxoCaixa'));if(s)state=Object.assign(state,s)}catch(e){}
+function save(){try{localStorage.setItem('fluxoCaixa',JSON.stringify(state))}catch(e){}}
+
+$('saldo').value=state.saldo;$('diario').value=state.diario;$('inicio').value=state.inicio;$('dias').value=state.dias;$('mData').value=state.inicio;
+['saldo','diario','inicio','dias'].forEach(k=>$(k).addEventListener('input',()=>{
+  state[k]=k==='inicio'?$(k).value:parseFloat($(k).value)||0;save();render();
+}));
+$('form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const v=parseFloat($('mVal').value);if(!(v>0))return;
+  state.movs.push({id:Date.now(),data:$('mData').value,desc:$('mDesc').value.trim(),tipo:$('mTipo').value,valor:v});
+  state.movs.sort((a,b)=>a.data.localeCompare(b.data));
+  $('mDesc').value='';$('mVal').value='';save();render();
+});
+function del(id){state.movs=state.movs.filter(m=>m.id!==id);save();render()}
+
+function render(){
+  const lista=$('lista');lista.innerHTML='';
+  state.movs.forEach(m=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<div>${m.desc}<br><small>${fmt(m.data)}</small></div><div style="display:flex;gap:8px;align-items:center"><b class="${m.tipo==='in'?'pos':'neg'}">${m.tipo==='in'?'+':'−'} ${brl(m.valor)}</b><button class="ghost">✕</button></div>`;
+    li.querySelector('button').onclick=()=>del(m.id);lista.appendChild(li);
+  });
+  const tb=$('tbody');tb.innerHTML='';
+  if(!state.inicio)return;
+  let saldo=state.saldo,tIn=0,tDia=0,tOut=0,primeiroNeg=null;
+  const hoje=iso(new Date());
+  const start=new Date(state.inicio+'T12:00:00');
+  const n=Math.min(Math.max(state.dias|0,1),730);
+  for(let i=0;i<n;i++){
+    const d=new Date(start);d.setDate(start.getDate()+i);const ds=iso(d);
+    const ent=state.movs.filter(m=>m.data===ds&&m.tipo==='in').reduce((a,m)=>a+m.valor,0);
+    const sai=state.movs.filter(m=>m.data===ds&&m.tipo==='out').reduce((a,m)=>a+m.valor,0);
+    saldo+=ent-state.diario-sai;tIn+=ent;tDia+=state.diario;tOut+=sai;
+    if(saldo<0&&!primeiroNeg)primeiroNeg=ds;
+    const tr=document.createElement('tr');
+    if(saldo<0)tr.className='negrow';if(ds===hoje)tr.classList.add('today');
+    tr.innerHTML=`<td>${fmt(ds)} <small style="color:var(--mut)">${wd[d.getDay()]}</small></td><td class="pos">${ent?brl(ent):'–'}</td><td>${brl(state.diario)}</td><td class="neg">${sai?brl(sai):'–'}</td><td class="${saldo<0?'neg':''}"><b>${brl(saldo)}</b></td>`;
+    tb.appendChild(tr);
+  }
+  $('kFinal').textContent=brl(saldo);$('kFinal').className=saldo<0?'neg':'pos';
+  $('kEnt').textContent=brl(tIn);$('kDia').textContent=brl(tDia);$('kSai').textContent=brl(tOut);
+  const al=$('alerta');
+  if(primeiroNeg){al.style.display='block';al.textContent='⚠ O saldo fica negativo a partir de '+fmt(primeiroNeg)+'.'}else al.style.display='none';
+}
+render();
+</script>
+</body>
+</html>
