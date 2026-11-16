@@ -5,42 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fluxo de Caixa Diário</title>
 <style>
-:root{--bg:#f6f7f9;--card:#fff;--ink:#1c2230;--mut:#6b7385;--line:#e4e7ee;--acc:#1f6feb;--pos:#1a7f4b;--neg:#c62828;--negbg:#fdecec}
-@media (prefers-color-scheme:dark){:root{--bg:#12151b;--card:#1b2029;--ink:#e8ebf1;--mut:#98a0b3;--line:#2a313d;--acc:#5a9bff;--pos:#4cc38a;--neg:#ff6b6b;--negbg:#3a1d1f}}
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1c2230;--mut:#6b7385;--line:#e4e7ee;--acc:#1f6feb;--pos:#1a7f4b;--neg:#c62828;--negbg:#fdecec;--posbg:#e8f6ee}
+@media (prefers-color-scheme:dark){:root{--bg:#12151b;--card:#1b2029;--ink:#e8ebf1;--mut:#98a0b3;--line:#2a313d;--acc:#5a9bff;--pos:#4cc38a;--neg:#ff6b6b;--negbg:#3a1d1f;--posbg:#173226}}
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
-header{padding:20px 16px 8px;max-width:960px;margin:auto;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+header{padding:20px 16px 8px;max-width:980px;margin:auto;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 h1{margin:0;font-size:22px}
 header p{margin:4px 0 0;color:var(--mut)}
 .user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut)}
 .user img{width:28px;height:28px;border-radius:50%}
-main{max-width:960px;margin:auto;padding:8px 16px 40px;display:grid;gap:14px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
-.card h2{margin:0 0 10px;font-size:15px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
-label{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}
-input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:15px}
-button{padding:9px 14px;border:0;border-radius:8px;background:var(--acc);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
-button.ghost{background:transparent;color:var(--mut);border:1px solid var(--line);padding:5px 9px;font-weight:500}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
-.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
-.kpi span{display:block;font-size:12px;color:var(--mut)}
-.kpi b{font-size:20px;font-variant-numeric:tabular-nums}
-.pos{color:var(--pos)}.neg{color:var(--neg)}
-.alert{background:var(--negbg);color:var(--neg);border-radius:10px;padding:10px 12px;font-weight:600;display:none}
-.addrow{display:grid;grid-template-columns:1fr 1.4fr 1fr 1fr auto;gap:8px;align-items:end}
-@media (max-width:600px){.addrow{grid-template-columns:1fr 1fr}.addrow button{grid-column:span 2}}
-.mov{list-style:none;margin:10px 0 0;padding:0}
-.mov li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
-.mov small{color:var(--mut)}
-.tablewrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
-th:first-child,td:first-child{text-align:left}
-th{font-size:12px;color:var(--mut);font-weight:600;position:sticky;top:0;background:var(--card)}
-tr.negrow td{background:var(--negbg)}
-tr.today td{font-weight:700}
-.hint{font-size:12px;color:var(--mut);margin-top:8px}
 #login{max-width:420px;margin:12vh auto;text-align:center;padding:28px 20px}
 #login h1{margin-bottom:6px}
 #login p{color:var(--mut);margin:0 0 20px}
@@ -49,6 +22,42 @@ tr.today td{font-weight:700}
 #erro{color:var(--neg);font-size:13px;margin-top:14px;min-height:1em}
 #sync{font-size:12px;color:var(--mut)}
 [hidden]{display:none!important}
+main{max-width:980px;margin:auto;padding:8px 16px 40px;display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card h2{margin:0 0 10px;font-size:15px}
+details.card summary{cursor:pointer;font-weight:600}
+details.card[open] summary{margin-bottom:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}
+input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:15px}
+button{padding:9px 14px;border:0;border-radius:8px;background:var(--acc);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+button.ghost{background:transparent;color:var(--mut);border:1px solid var(--line);padding:5px 9px;font-weight:500}
+.hero{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:10px}
+@media (max-width:700px){.hero{grid-template-columns:1fr 1fr}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.kpi span{display:block;font-size:12px;color:var(--mut)}
+.kpi b{font-size:20px;font-variant-numeric:tabular-nums}
+.kpi small{display:block;color:var(--mut);font-size:12px;margin-top:2px}
+.kpi.main{background:var(--posbg);border-color:transparent}
+.kpi.main.bad{background:var(--negbg)}
+.kpi.main b{font-size:28px}
+.pos{color:var(--pos)}.neg{color:var(--neg)}
+.alert{background:var(--negbg);color:var(--neg);border-radius:10px;padding:10px 12px;font-weight:600;display:none}
+.addrow{display:grid;grid-template-columns:1fr 1.4fr 1.1fr 1fr auto;gap:8px;align-items:end}
+@media (max-width:600px){.addrow{grid-template-columns:1fr 1fr}.addrow button{grid-column:span 2}}
+.mov{list-style:none;margin:10px 0 0;padding:0;max-height:320px;overflow:auto}
+.mov li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.mov small{color:var(--mut)}
+.tag{font-size:11px;padding:1px 6px;border-radius:6px;border:1px solid var(--line);color:var(--mut);margin-left:4px}
+.tablewrap{overflow-x:auto;max-height:520px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;color:var(--mut);font-weight:600;position:sticky;top:0;background:var(--card)}
+tr.negrow td{background:var(--negbg)}
+tr.today td{font-weight:700;outline:2px solid var(--acc);outline-offset:-2px}
+td.prev{color:var(--mut);font-style:italic}
+.hint{font-size:12px;color:var(--mut);margin-top:8px;line-height:1.45}
 </style>
 </head>
 <body>
@@ -67,7 +76,7 @@ tr.today td{font-weight:700}
 <header>
   <div>
     <h1>Fluxo de Caixa Diário</h1>
-    <p>Seu saldo projetado dia a dia, com o gasto diário fixo já descontado.</p>
+    <p>Você ganha uma cota por dia. O que não gastar, acumula para os próximos dias.</p>
   </div>
   <div class="user">
     <img id="foto" alt="" referrerpolicy="no-referrer">
@@ -76,47 +85,53 @@ tr.today td{font-weight:700}
   </div>
 </header>
 <main>
-  <section class="card">
-    <h2>Configuração</h2>
-    <div class="grid">
-      <div><label>Saldo inicial (R$)</label><input id="saldo" type="number" step="0.01" value="0"></div>
-      <div><label>Gasto diário (R$)</label><input id="diario" type="number" step="0.01" value="21.50"></div>
-      <div><label>Data de início</label><input id="inicio" type="date"></div>
-      <div><label>Dias projetados</label><input id="dias" type="number" min="1" max="730" value="30"></div>
-    </div>
+  <section class="hero">
+    <div class="kpi main" id="boxHoje"><span>Disponível hoje</span><b id="kHoje">–</b><small id="kHojeSub"></small></div>
+    <div class="kpi"><span>Acumulado até ontem</span><b id="kAcum">–</b><small>sobras dos dias anteriores</small></div>
+    <div class="kpi"><span>Gasto hoje</span><b id="kGastoHoje" class="neg">–</b><small id="kCota"></small></div>
+    <div class="kpi"><span>Saldo em conta (fim)</span><b id="kConta">–</b><small id="kContaSub"></small></div>
   </section>
 
   <div id="alerta" class="alert"></div>
 
-  <section class="kpis">
-    <div class="kpi"><span>Saldo final</span><b id="kFinal">–</b></div>
-    <div class="kpi"><span>Total entradas</span><b id="kEnt" class="pos">–</b></div>
-    <div class="kpi"><span>Gasto diário no período</span><b id="kDia" class="neg">–</b></div>
-    <div class="kpi"><span>Outras saídas</span><b id="kSai" class="neg">–</b></div>
-  </section>
-
   <section class="card">
-    <h2>Entradas e saídas extras</h2>
+    <h2>Lançar</h2>
     <form id="form" class="addrow">
       <div><label>Data</label><input id="mData" type="date" required></div>
-      <div><label>Descrição</label><input id="mDesc" placeholder="Ex.: Salário, aluguel" required></div>
-      <div><label>Tipo</label><select id="mTipo"><option value="in">Entrada</option><option value="out">Saída</option></select></div>
-      <div><label>Valor (R$)</label><input id="mVal" type="number" step="0.01" min="0" required></div>
+      <div><label>Descrição</label><input id="mDesc" placeholder="Ex.: Almoço, Uber, Salário" required></div>
+      <div><label>Tipo</label><select id="mTipo">
+        <option value="gasto">Gasto do dia (usa a cota)</option>
+        <option value="in">Entrada (salário etc.)</option>
+        <option value="out">Saída fixa (aluguel, contas)</option>
+      </select></div>
+      <div><label>Valor (R$)</label><input id="mVal" type="number" step="0.01" min="0" inputmode="decimal" required></div>
       <button type="submit">Adicionar</button>
     </form>
     <ul id="lista" class="mov"></ul>
   </section>
 
   <section class="card">
-    <h2>Fluxo dia a dia</h2>
+    <h2>Dia a dia</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Data</th><th>Entradas</th><th>Gasto diário</th><th>Outras saídas</th><th>Saldo</th></tr></thead>
+        <thead><tr><th>Data</th><th>Cota</th><th>Disponível</th><th>Gasto</th><th>Sobra → acumula</th><th>Entradas/saídas fixas</th><th>Saldo em conta</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
-    <p class="hint">Linhas em vermelho = saldo negativo. Seus dados ficam salvos na sua conta e aparecem em qualquer aparelho.</p>
+    <p class="hint"><b>Disponível</b> = cota do dia + o que sobrou dos dias anteriores. <b>Sobra</b> = disponível − gasto, e passa para o dia seguinte (se for negativa, o excesso é descontado dos próximos dias).<br>
+    Dias futuros (em itálico) supõem que você gaste exatamente a cota. Seus dados ficam salvos na sua conta e aparecem em qualquer aparelho.</p>
   </section>
+
+  <details class="card" id="cfgBox">
+    <summary>Configuração</summary>
+    <div class="grid">
+      <div><label>Cota diária (R$)</label><input id="diario" type="number" step="0.01" value="21.50"></div>
+      <div><label>Data de início</label><input id="inicio" type="date"></div>
+      <div><label>Saldo inicial em conta (R$)</label><input id="saldo" type="number" step="0.01" value="0"></div>
+      <div><label>Mostrar até (dias à frente de hoje)</label><input id="dias" type="number" min="0" max="730" value="15"></div>
+    </div>
+    <p class="hint">A cota começa a contar na data de início. O saldo em conta é opcional: serve para ver se o dinheiro total aguenta o período.</p>
+  </details>
 </main>
 </div>
 
@@ -133,7 +148,8 @@ const fmt=s=>{const[y,m,d]=s.split('-');return d+'/'+m+'/'+y};
 const wd=['dom','seg','ter','qua','qui','sex','sáb'];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const padrao=()=>({saldo:0,diario:21.5,inicio:iso(new Date()),dias:30,movs:[]});
+const padrao=()=>({saldo:0,diario:21.5,inicio:iso(new Date()),dias:15,movs:[],v:2});
+const tipoNome={gasto:'gasto do dia',in:'entrada',out:'saída fixa'};
 let state=padrao(), ref=null, unsub=null, timer=null;
 
 const firebaseConfig = {
@@ -180,13 +196,14 @@ onAuthStateChanged(auth,async user=>{
     if(!snap.exists()){
       // primeira vez: aproveita dados salvos antes só neste navegador
       let local=null; try{local=JSON.parse(localStorage.getItem('fluxoCaixa'))}catch(e){}
-      state=Object.assign(padrao(),local||{});
+      state=Object.assign(padrao(),local||{}); state.v=2;
       await setDoc(ref,state);
     }
   }catch(e){ $('sync').textContent='Erro ao carregar dados'; }
   unsub=onSnapshot(ref,s=>{
     if(!s.exists()||s.metadata.hasPendingWrites)return;
     state=Object.assign(padrao(),s.data());
+    if(state.v!==2){ state.v=2; state.dias=15; salvar(); } // migração para o modelo de saldo diário
     preencher(); render();
     $('sync').textContent='Sincronizado';
   });
@@ -206,6 +223,7 @@ function preencher(){
   const a=document.activeElement;
   ['saldo','diario','inicio','dias'].forEach(k=>{ if(a!==$(k)) $(k).value=state[k]; });
   if(!$('mData').value)$('mData').value=iso(new Date());
+  if(!state.movs.length)$('cfgBox').open=true;
 }
 
 ['saldo','diario','inicio','dias'].forEach(k=>$(k).addEventListener('input',()=>{
@@ -216,38 +234,76 @@ $('form').addEventListener('submit',e=>{
   const v=parseFloat($('mVal').value); if(!(v>0))return;
   state.movs.push({id:Date.now(),data:$('mData').value,desc:$('mDesc').value.trim(),tipo:$('mTipo').value,valor:v});
   state.movs.sort((a,b)=>a.data.localeCompare(b.data));
-  $('mDesc').value=''; $('mVal').value=''; salvar(); render();
+  $('mDesc').value=''; $('mVal').value=''; $('mTipo').value='gasto'; salvar(); render(); $('mDesc').focus();
 });
 function del(id){ state.movs=state.movs.filter(m=>m.id!==id); salvar(); render(); }
+const sum=(ds,t)=>state.movs.filter(m=>m.data===ds&&m.tipo===t).reduce((a,m)=>a+m.valor,0);
+const has=(ds,t)=>state.movs.some(m=>m.data===ds&&m.tipo===t);
 
 function render(){
   const lista=$('lista'); lista.innerHTML='';
-  state.movs.forEach(m=>{
-    const li=document.createElement('li');
-    li.innerHTML=`<div>${esc(m.desc)}<br><small>${fmt(m.data)}</small></div><div style="display:flex;gap:8px;align-items:center"><b class="${m.tipo==='in'?'pos':'neg'}">${m.tipo==='in'?'+':'−'} ${brl(m.valor)}</b><button class="ghost" type="button">✕</button></div>`;
+  [...state.movs].reverse().forEach(m=>{
+    const li=document.createElement('li'); const sinal=m.tipo==='in'?'+':'−';
+    li.innerHTML=`<div>${esc(m.desc)}<span class="tag">${tipoNome[m.tipo]||esc(m.tipo)}</span><br><small>${fmt(m.data)}</small></div><div style="display:flex;gap:8px;align-items:center"><b class="${m.tipo==='in'?'pos':'neg'}">${sinal} ${brl(m.valor)}</b><button class="ghost" type="button" title="Excluir">✕</button></div>`;
     li.querySelector('button').onclick=()=>del(m.id); lista.appendChild(li);
   });
+
   const tb=$('tbody'); tb.innerHTML='';
   if(!state.inicio)return;
-  let saldo=state.saldo,tIn=0,tDia=0,tOut=0,primeiroNeg=null;
   const hoje=iso(new Date());
+  const cota=state.diario;
   const start=new Date(state.inicio+'T12:00:00');
-  const n=Math.min(Math.max(state.dias|0,1),730);
-  for(let i=0;i<n;i++){
-    const d=new Date(start); d.setDate(start.getDate()+i); const ds=iso(d);
-    const ent=state.movs.filter(m=>m.data===ds&&m.tipo==='in').reduce((a,m)=>a+m.valor,0);
-    const sai=state.movs.filter(m=>m.data===ds&&m.tipo==='out').reduce((a,m)=>a+m.valor,0);
-    saldo+=ent-state.diario-sai; tIn+=ent; tDia+=state.diario; tOut+=sai;
-    if(saldo<0&&!primeiroNeg)primeiroNeg=ds;
+  const hojeD=new Date(hoje+'T12:00:00');
+  const fim=new Date(Math.max(hojeD,start)); fim.setDate(fim.getDate()+Math.min(Math.max(state.dias|0,0),730));
+  let acum=0,conta=state.saldo,primeiroNegCota=null,primeiroNegConta=null;
+  let acumOntem=0,dispHoje=null,gastoHoje=0;
+  const rows=[];
+  for(let d=new Date(start); d<=fim; d.setDate(d.getDate()+1)){
+    const ds=iso(d); const futuro=ds>hoje;
+    const disp=acum+cota;
+    const real=sum(ds,'gasto');
+    const prev=futuro&&!has(ds,'gasto');
+    const gasto=prev?cota:real;
+    const ent=sum(ds,'in'), sai=sum(ds,'out');
+    if(ds===hoje){ acumOntem=acum; dispHoje=disp; gastoHoje=real; }
+    acum=disp-gasto;
+    conta+=ent-sai-gasto;
+    if(acum<0&&!primeiroNegCota&&!futuro)primeiroNegCota=ds;
+    if(conta<0&&!primeiroNegConta)primeiroNegConta=ds;
+    const ext=ent-sai;
     const tr=document.createElement('tr');
-    if(saldo<0)tr.className='negrow'; if(ds===hoje)tr.classList.add('today');
-    tr.innerHTML=`<td>${fmt(ds)} <small style="color:var(--mut)">${wd[d.getDay()]}</small></td><td class="pos">${ent?brl(ent):'–'}</td><td>${brl(state.diario)}</td><td class="neg">${sai?brl(sai):'–'}</td><td class="${saldo<0?'neg':''}"><b>${brl(saldo)}</b></td>`;
-    tb.appendChild(tr);
+    if(acum<0)tr.className='negrow'; if(ds===hoje)tr.classList.add('today');
+    tr.innerHTML=`<td>${fmt(ds)} <small style="color:var(--mut)">${wd[d.getDay()]}</small></td>
+      <td>${brl(cota)}</td>
+      <td>${brl(disp)}</td>
+      <td class="${prev?'prev':'neg'}">${gasto?brl(gasto):'–'}</td>
+      <td class="${acum<0?'neg':'pos'}"><b>${brl(acum)}</b></td>
+      <td class="${ext>0?'pos':ext<0?'neg':''}">${ext?(ext>0?'+':'−')+' '+brl(Math.abs(ext)):'–'}</td>
+      <td class="${conta<0?'neg':''}">${brl(conta)}</td>`;
+    rows.push(tr);
   }
-  $('kFinal').textContent=brl(saldo); $('kFinal').className=saldo<0?'neg':'pos';
-  $('kEnt').textContent=brl(tIn); $('kDia').textContent=brl(tDia); $('kSai').textContent=brl(tOut);
-  const al=$('alerta');
-  if(primeiroNeg){al.style.display='block';al.textContent='⚠ O saldo fica negativo a partir de '+fmt(primeiroNeg)+'.'}else al.style.display='none';
+  rows.reverse().forEach(r=>tb.appendChild(r)); // mais recente em cima
+
+  if(dispHoje===null){
+    $('kHoje').textContent='–'; $('kHojeSub').textContent='cota começa em '+fmt(state.inicio);
+    $('kAcum').textContent='–'; $('kGastoHoje').textContent='–';
+  }else{
+    const resta=dispHoje-gastoHoje;
+    $('kHoje').textContent=brl(resta); $('kHoje').className=resta<0?'neg':'pos';
+    $('boxHoje').classList.toggle('bad',resta<0);
+    $('kHojeSub').textContent=`${brl(dispHoje)} no dia − ${brl(gastoHoje)} gastos`;
+    $('kAcum').textContent=brl(acumOntem); $('kAcum').className=acumOntem<0?'neg':'pos';
+    $('kGastoHoje').textContent=brl(gastoHoje);
+  }
+  $('kCota').textContent='cota diária: '+brl(cota);
+  $('kConta').textContent=brl(conta); $('kConta').className=conta<0?'neg':'';
+  $('kContaSub').textContent='projeção em '+fmt(iso(fim));
+
+  const al=$('alerta'); const msgs=[];
+  if(dispHoje!==null&&dispHoje-gastoHoje<0)msgs.push('⚠ Você passou da cota acumulada: o excesso será descontado dos próximos dias.');
+  else if(primeiroNegCota)msgs.push('⚠ A cota acumulada ficou negativa em '+fmt(primeiroNegCota)+'.');
+  if(primeiroNegConta)msgs.push('⚠ O saldo em conta fica negativo a partir de '+fmt(primeiroNegConta)+'.');
+  al.style.display=msgs.length?'block':'none'; al.innerHTML=msgs.join('<br>');
 }
 </script>
 </body>
