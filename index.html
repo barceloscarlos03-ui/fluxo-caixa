@@ -101,6 +101,25 @@ table.sortable th[data-sort]{cursor:pointer}
 .mutxt{color:var(--mut);font-weight:400}
 .tip{position:fixed;z-index:9;pointer-events:none;background:var(--ink);color:var(--card);font-size:12px;padding:6px 8px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .vazio{color:var(--mut);font-size:13px;padding:8px 0}
+.tabs{flex-wrap:wrap}
+table.orc td,table.orc th{padding:6px 8px}
+#tabOrc .tablewrap{max-height:none}
+table.orc tr.grp td{background:var(--bg);font-weight:700;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
+table.orc tr.tot td{font-weight:700;border-top:2px solid var(--line)}
+table.orc tr.mut td{color:var(--mut)}
+.previn{width:110px;padding:4px 6px;text-align:right;font-size:14px;font-variant-numeric:tabular-nums}
+td.barcol,th.barcol{width:22%;min-width:90px}
+td.barcol .tr{display:block;height:10px;background:var(--line);border-radius:4px;overflow:hidden}
+td.barcol .fl{display:block;height:100%;background:var(--acc);border-radius:0 4px 4px 0}
+td.barcol .fl.over{background:var(--neg)}
+.svgwrap svg{width:100%;height:auto;display:block}
+.svgwrap .ax{fill:var(--mut);font-size:10px}.svgwrap .gl{stroke:var(--line);stroke-width:1}
+.svgwrap .cl{stroke:var(--neg);stroke-width:1.5;stroke-dasharray:4 3}
+.svgwrap rect.b{fill:var(--acc)}.svgwrap rect.b.over{fill:var(--neg)}.svgwrap rect.hit{fill:transparent}
+.svgwrap g.col:hover rect.b{opacity:.75}
+select.inl{width:auto;display:inline-block;padding:3px 8px;font-size:13px;margin-left:6px}
+.st{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line)}
+.st.ok{color:var(--pos);border-color:var(--pos)}.st.bad{color:var(--neg);border-color:var(--neg)}.st.run{color:var(--acc);border-color:var(--acc)}.st.pend{color:var(--mut)}
 main{grid-template-columns:minmax(0,1fr)}.card,.charts>*{min-width:0}
 @media (max-width:600px){.hb{grid-template-columns:minmax(80px,32%) 1fr 96px;font-size:12px}.catrow{grid-template-columns:.7fr 1.5fr}.catrow button{grid-column:span 2}}
 </style>
@@ -132,6 +151,8 @@ main{grid-template-columns:minmax(0,1fr)}.card,.charts>*{min-width:0}
 <nav class="tabs">
   <button type="button" data-tab="lanc" class="on">Lançamentos</button>
   <button type="button" data-tab="anal">Análise</button>
+  <button type="button" data-tab="orc">Orçamento</button>
+  <button type="button" data-tab="inv">Investimentos</button>
 </nav>
 <main id="tabLanc">
   <section class="hero">
@@ -194,7 +215,9 @@ main{grid-template-columns:minmax(0,1fr)}.card,.charts>*{min-width:0}
       <div><label>Para</label><select id="cPara"><option value="out">Gastos</option><option value="in">Entradas</option></select></div>
       <button type="submit">Criar</button>
     </form>
-    <p class="hint">Excluir uma categoria não apaga os lançamentos: eles passam a aparecer como "Sem categoria".</p>
+    <p class="hint">Excluir uma categoria não apaga os lançamentos: eles passam a aparecer como "Sem categoria". Valores previstos de cada categoria ficam na aba Orçamento.</p>
+    <h3 class="sub">Importar dados</h3>
+    <input id="impFile" type="file" accept=".json,application/json"> <span id="impMsg"></span>
   </details>
 </main>
 
@@ -251,6 +274,109 @@ main{grid-template-columns:minmax(0,1fr)}.card,.charts>*{min-width:0}
     </div>
   </section>
 </main>
+<main id="tabOrc" hidden>
+  <section class="card filtros">
+    <div class="frow">
+      <div><label>Mês</label><input id="oMes" type="month"></div>
+      <div class="hint" style="align-self:end;margin:0 0 8px">O <b>previsto</b> você define aqui; o <b>realizado</b> vem dos lançamentos (pela categoria) e do histórico importado.</div>
+    </div>
+  </section>
+  <section class="kpis4">
+    <div class="kpi"><span>Entradas</span><b id="oEnt" class="pos">–</b><small id="oEntSub"></small></div>
+    <div class="kpi"><span>Despesas</span><b id="oDesp" class="neg">–</b><small id="oDespSub"></small></div>
+    <div class="kpi"><span>Sobra do mês</span><b id="oSobra">–</b><small id="oSobraSub"></small></div>
+    <div class="kpi"><span>Taxa de poupança</span><b id="oTaxa">–</b><small id="oTaxaSub"></small></div>
+  </section>
+  <section class="kpis4">
+    <div class="kpi"><span>% despesas essenciais</span><b id="oEss">–</b><small id="oEssSub"></small></div>
+    <div class="kpi"><span>Renda em dinheiro (sem VA)</span><b id="oRendaDin">–</b><small id="oRendaDinSub"></small></div>
+    <div class="kpi"><span>Reserva de emergência ideal</span><b id="oReserva">–</b><small>6× as despesas essenciais previstas</small></div>
+    <div class="kpi"><span>Reserva coberta?</span><b id="oResOk">–</b><small id="oResOkSub"></small></div>
+  </section>
+
+  <section class="card">
+    <h2>Entradas</h2>
+    <div class="tablewrap"><table class="orc"><thead><tr><th>Entrada</th><th>Previsto</th><th>Realizado</th><th>Diferença</th></tr></thead><tbody id="oTbEnt"></tbody></table></div>
+  </section>
+  <section class="card">
+    <h2>Despesas — previsto x realizado</h2>
+    <div class="tablewrap"><table class="orc"><thead><tr><th>Despesa</th><th>Previsto</th><th>Realizado</th><th class="barcol"></th><th>Diferença</th></tr></thead><tbody id="oTbDesp"></tbody></table></div>
+    <p class="hint">Edite o valor previsto direto na tabela. Barra vermelha = passou do previsto.</p>
+    <form id="formLinha" class="catrow" style="grid-template-columns:.6fr 1.6fr 1.2fr .9fr auto">
+      <div><label>Emoji</label><input id="lEmoji" maxlength="4" placeholder="🐶"></div>
+      <div><label>Nova linha do orçamento</label><input id="lNome" placeholder="Ex.: Pet" required></div>
+      <div><label>Tipo</label><select id="lTipo"><option value="E">Despesa essencial</option><option value="N">Despesa não essencial</option><option value="in">Entrada</option></select></div>
+      <div><label>Previsto (R$)</label><input id="lPrev" type="number" step="0.01" min="0" inputmode="decimal"></div>
+      <button type="submit">Criar</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Histórico mensal <select id="oAno" class="inl"></select></h2>
+    <div id="oChHist"></div>
+    <div class="tablewrap"><table class="orc"><thead><tr><th>Mês</th><th>Entradas</th><th>Despesas</th><th>Essenciais</th><th>Não essenciais</th><th>Sobra</th><th>Poupança</th></tr></thead><tbody id="oTbHist"></tbody></table></div>
+  </section>
+</main>
+
+<main id="tabInv" hidden>
+  <section class="kpis4">
+    <div class="kpi main" id="iBoxSaldo"><span>Saldo da caixinha</span><b id="iSaldo">–</b><small id="iSaldoSub"></small></div>
+    <div class="kpi"><span>Meta</span><b id="iMeta">–</b><small id="iMetaSub"></small></div>
+    <div class="kpi"><span>Aporte médio mensal</span><b id="iMedio">–</b><small id="iMedioSub"></small></div>
+    <div class="kpi"><span>Disponível p/ casa (após reserva)</span><b id="iDisp">–</b><small id="iDispSub"></small></div>
+  </section>
+  <section class="kpis4">
+    <div class="kpi"><span>Enviado por Carlos</span><b id="iCarlos" class="pos">–</b></div>
+    <div class="kpi"><span>Enviado por Geovanna</span><b id="iGeo" class="pos">–</b></div>
+    <div class="kpi"><span>Total retirado</span><b id="iRet" class="neg">–</b></div>
+    <div class="kpi"><span>Rendimentos</span><b id="iRend" class="pos">–</b></div>
+  </section>
+
+  <section class="card">
+    <h2>Lançar na caixinha</h2>
+    <form id="formInv" class="addrow">
+      <div><label>Data</label><input id="iData" type="date" required></div>
+      <div><label>Tipo</label><select id="iTipo"><option value="aporte">Aporte (depósito)</option><option value="retirada">Retirada</option><option value="rendimento">Rendimento</option></select></div>
+      <div id="iQuemBox"><label>Quem enviou</label><select id="iQuem"><option value="carlos">🙋‍♂️ Carlos</option><option value="geovanna">🙋‍♀️ Geovanna</option></select></div>
+      <div id="iClasseBox"><label>Aplicação</label><select id="iClasse"><option value="fixa">Renda fixa</option><option value="variavel">Renda variável</option></select></div>
+      <div><label>Referente a</label><input id="iRef" placeholder="Ex.: entrada da casa" autocomplete="off"></div>
+      <div><label>Valor (R$)</label><input id="iVal" type="number" step="0.01" min="0" inputmode="decimal" required></div>
+      <button type="submit">Adicionar</button>
+    </form>
+  </section>
+
+  <div class="charts">
+    <section class="card">
+      <h2>Projeção até a meta</h2>
+      <div class="frow" style="margin-bottom:8px">
+        <div><label>Cenário de rendimento (a.m.)</label><select id="iCen">
+          <option value="0.005">Pessimista — poupança 0,5%</option>
+          <option value="0.009">Base — ~100% CDI 0,9%</option>
+          <option value="0.0094">Planilha 0,94%</option>
+          <option value="0.012">Otimista 1,2%</option>
+        </select></div>
+      </div>
+      <div id="iChProj"></div>
+      <p class="hint" id="iProjHint"></p>
+    </section>
+    <section class="card">
+      <h2>Configuração da meta</h2>
+      <div class="grid">
+        <div><label>Meta (R$)</label><input id="iMetaIn" type="number" step="0.01"></div>
+        <div><label>Mês final</label><input id="iFimIn" type="month"></div>
+      </div>
+      <p class="hint">O valor esperado de cada mês você edita no cronograma abaixo.</p>
+      <h3 class="sub">Extrato da caixinha</h3>
+      <ul id="iLista" class="mov"></ul>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Cronograma mês a mês</h2>
+    <div class="tablewrap"><table class="orc"><thead><tr><th>Mês</th><th>Esperado</th><th>Carlos</th><th>Geovanna</th><th>Depositado</th><th>Retirado</th><th>Saldo acumulado</th><th>Status</th></tr></thead><tbody id="iTbCron"></tbody></table></div>
+    <p class="hint">Status: <b>Concluído</b> = depositou o esperado · <b>Falhou</b> = mês passou abaixo do esperado · <b>Em andamento</b> = mês atual · <b>Pendente</b> = mês futuro.</p>
+  </section>
+</main>
 <div id="tip" class="tip" hidden></div>
 </div>
 
@@ -268,25 +394,29 @@ const wd=['dom','seg','ter','qua','qui','sex','sáb'];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 const DEF_CATS=[
-  {id:'alim',nome:'Alimentação',emoji:'🍽️'},{id:'merc',nome:'Mercado',emoji:'🛒'},{id:'transp',nome:'Transporte',emoji:'🚗'},
-  {id:'casa',nome:'Casa e contas',emoji:'🏠'},{id:'saude',nome:'Saúde',emoji:'💊'},{id:'lazer',nome:'Lazer',emoji:'🎉'},
-  {id:'compras',nome:'Compras',emoji:'🛍️'},{id:'educ',nome:'Educação',emoji:'📚'},{id:'assin',nome:'Assinaturas',emoji:'📱'},
-  {id:'outros',nome:'Outros',emoji:'📦'}];
-const DEF_CATS_IN=[{id:'sal',nome:'Salário',emoji:'💰'},{id:'extra',nome:'Renda extra',emoji:'💵'},{id:'reemb',nome:'Reembolso',emoji:'↩️'},{id:'outin',nome:'Outras entradas',emoji:'➕'}];
+  {id:'fin',nome:'Financiamento',emoji:'🏠',ess:true},{id:'internet',nome:'Internet',emoji:'🌐',ess:true},{id:'cond',nome:'Condomínio',emoji:'🏢',ess:true},
+  {id:'luz',nome:'Luz',emoji:'💡',ess:true},{id:'barb',nome:'Barbeiro',emoji:'💈',ess:true},{id:'alim',nome:'Alimentação',emoji:'🍽️',ess:true},
+  {id:'merc',nome:'Supermercado',emoji:'🛒',ess:true},{id:'transp',nome:'Transporte (ônibus e Uber)',emoji:'🚌',ess:true},{id:'cel',nome:'NuCell',emoji:'📱',ess:true},
+  {id:'mei',nome:'MEI',emoji:'🧾',ess:true},{id:'cons',nome:'Consórcio',emoji:'🤝',ess:true},{id:'prevp',nome:'Previdência privada',emoji:'🏦',ess:true},
+  {id:'seg',nome:'Seguro',emoji:'🛡️',ess:true},
+  {id:'cartao',nome:'Cartão de crédito (não categorizado)',emoji:'💳',ess:false},{id:'lazer',nome:'Lazer (casal)',emoji:'🎉',ess:false},
+  {id:'imprev',nome:'Imprevistos',emoji:'⚠️',ess:false},{id:'acad',nome:'Academia',emoji:'🏋️',ess:false},{id:'casam',nome:'Casamento',emoji:'💍',ess:false},
+  {id:'outros',nome:'Outros',emoji:'📦',ess:false}].map(c=>({...c,prev:0}));
+const DEF_CATS_IN=[{id:'salc',nome:'Salário (Carlos)',emoji:'💰'},{id:'salg',nome:'Salário (Geovanna)',emoji:'💰'},{id:'va',nome:'Vale-alimentação',emoji:'🎫',restrito:true},
+  {id:'pibid',nome:'PIBID',emoji:'🎓'},{id:'ifes',nome:'Auxílio (IFES)',emoji:'🎓'},{id:'free',nome:'Free',emoji:'💵'},{id:'nova',nome:'Nova School',emoji:'📚'},
+  {id:'reemb',nome:'Reembolso',emoji:'↩️'},{id:'outin',nome:'Outras entradas',emoji:'➕'}].map(c=>({...c,prev:0}));
 const KW={
-  alim:['almoco','lanche','ifood','restaurante','jantar','cafe','pizza','hamburg','delivery','marmita','alimenta','refeicao','padaria','salgado','acai','sorvete','rappi','bk','mcdonald'],
+  fin:['financiamento','prestacao da casa','parcela da casa'],internet:['internet','wifi','wi-fi'],cond:['condominio'],luz:['luz','energia','edp'],
+  barb:['barbeiro','barbearia','cabelo','barba'],
+  alim:['almoco','lanche','ifood','restaurante','jantar','cafe','pizza','hamburg','delivery','marmita','alimenta','refeicao','padaria','salgado','acai','sorvete','rappi','mcdonald'],
   merc:['mercado','supermercado','feira','atacad','assai','hortifruti','acougue','carrefour','extrabom'],
-  transp:['uber','99','combustivel','gasolina','etanol','posto','onibus','passagem','estacionamento','pedagio','taxi','metro','transcol'],
-  casa:['aluguel','luz','energia','agua','internet','condominio','gas','iptu','conta de','edp','cesan'],
-  saude:['farmacia','remedio','consulta','medic','exame','dentista','plano de saude','academia','drogaria'],
-  lazer:['cinema','bar','show','passeio','viagem','festa','cerveja','balada','jogo','praia'],
-  compras:['roupa','tenis','sapato','shopee','amazon','mercado livre','shein','eletronic','presente','loja'],
-  educ:['faculdade','curso','livro','apostila','mensalidade','escola','concurso','material'],
-  assin:['netflix','spotify','prime','disney','hbo','max','youtube','assinatura','celular','plano','icloud','google one','chatgpt','claude'],
-  sal:['salario','pagamento','holerite','adiantamento','vale'],
-  extra:['freela','extra','venda','bico','pix recebido'],
+  transp:['uber','99','onibus','passagem','transcol','taxi','metro','combustivel','gasolina','posto','estacionamento','pedagio'],
+  cel:['nucell','celular','recarga','chip'],mei:['mei','das '],cons:['consorcio'],prevp:['previdencia'],seg:['seguro'],
+  cartao:['cartao','fatura'],lazer:['cinema','bar','show','passeio','viagem','festa','cerveja','balada','praia','lazer'],
+  imprev:['imprevisto','emergencia','conserto'],acad:['academia','gym','smartfit'],casam:['casamento','buffet','vestido','igreja','cartorio','convite','terno'],
+  salc:['salario'],va:['vale','va '],pibid:['pibid'],ifes:['ifes','auxilio'],free:['free','freela','bico','extra','venda'],nova:['nova school'],
   reemb:['reembolso','estorno','devolu']};
-const padrao=()=>({saldo:0,diario:21.5,inicio:iso(new Date()),dias:15,movs:[],v:4,cats:DEF_CATS.map(c=>({...c})),catsIn:DEF_CATS_IN.map(c=>({...c}))});
+const padrao=()=>({saldo:0,diario:21.5,inicio:iso(new Date()),dias:15,movs:[],v:5,inv:invDef(),hist:{},cats:DEF_CATS.map(c=>({...c})),catsIn:DEF_CATS_IN.map(c=>({...c}))});
 const tipoNome={gasto:'gasto do dia',in:'entrada',out:'saída fixa'};
 const QUEM={carlos:{nome:'Carlos',emoji:'🙋‍♂️'},geovanna:{nome:'Geovanna',emoji:'🙋‍♀️'},casal:{nome:'Casal',emoji:'👫'}};
 const PAG={pix:{nome:'PIX',emoji:'⚡'},debito:{nome:'Débito',emoji:'💳'},credito:{nome:'Crédito',emoji:'💳'},none:{nome:'—',emoji:''}};
@@ -397,7 +527,18 @@ function migrar(){
   if(!Array.isArray(state.catsIn)){state.catsIn=DEF_CATS_IN.map(c=>({...c}));mudou=true;}
   state.movs.forEach(m=>{ if(!m.cat){ m.cat=adivinhar(m.desc,m.tipo)||'none'; mudou=true; } });
   state.movs.forEach(m=>{ if(!m.quem){m.quem='carlos';mudou=true;} if(m.tipo!=='in'&&!m.pag){m.pag='pix';mudou=true;} });
-  if(state.v!==4){ if(state.v!==2&&state.v!==3)state.dias=15; state.v=4; mudou=true; }
+  if(!state.v||state.v<5){
+    if(!state.v||state.v<2)state.dias=15;
+    const mapa={casa:'outros',saude:'outros',compras:'outros',educ:'outros',assin:'outros',extra:'free'};
+    const novos=new Set([...DEF_CATS,...DEF_CATS_IN].map(c=>c.id));
+    const custom=(state.cats||[]).filter(c=>!novos.has(c.id)&&String(c.id).startsWith('c')).map(c=>({...c,prev:c.prev||0,ess:!!c.ess}));
+    const customIn=(state.catsIn||[]).filter(c=>!novos.has(c.id)&&String(c.id).startsWith('c')).map(c=>({...c,prev:c.prev||0}));
+    state.cats=[...DEF_CATS.map(c=>({...c})),...custom]; state.catsIn=[...DEF_CATS_IN.map(c=>({...c})),...customIn];
+    state.movs.forEach(m=>{ if(m.cat==='sal')m.cat=m.quem==='geovanna'?'salg':'salc'; else if(mapa[m.cat])m.cat=mapa[m.cat]; });
+    state.v=5; mudou=true;
+  }
+  if(!state.inv){state.inv=invDef();mudou=true;}
+  if(!state.hist){state.hist={};mudou=true;}
   return mudou;
 }
 function opcoesCat(sel,tipo,valor){
@@ -410,7 +551,7 @@ let aba='lanc';
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   aba=b.dataset.tab;
   document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
-  $('tabLanc').hidden=aba!=='lanc'; $('tabAnal').hidden=aba!=='anal';
+  $('tabLanc').hidden=aba!=='lanc'; $('tabAnal').hidden=aba!=='anal'; $('tabOrc').hidden=aba!=='orc'; $('tabInv').hidden=aba!=='inv';
   render();
 });
 
@@ -477,6 +618,8 @@ function render(){
   if(!state.cats)return;
   renderCatsCfg();
   if(aba==='anal'){ renderAnalise(); return; }
+  if(aba==='orc'){ renderOrc(); return; }
+  if(aba==='inv'){ renderInv(); return; }
   const lista=$('lista'); lista.innerHTML='';
   [...state.movs].reverse().forEach(m=>{
     const li=document.createElement('li'); const sinal=m.tipo==='in'?'+':'−';
@@ -724,6 +867,211 @@ document.addEventListener('mousemove',e=>{
   tip.style.left=x+'px'; tip.style.top=yy+'px';
 });
 document.addEventListener('touchstart',e=>{const el=e.target.closest&&e.target.closest('[data-tip]');if(!el){tip.hidden=true;return;}const t0=e.touches[0];tip.textContent=el.dataset.tip;tip.hidden=false;tip.style.left=Math.max(8,Math.min(t0.clientX-60,innerWidth-260))+'px';tip.style.top=(t0.clientY-44)+'px';},{passive:true});
+
+// =================== ORÇAMENTO ===================
+const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const ymHoje=()=>iso(new Date()).slice(0,7);
+const nomeMes=m=>{const[y,mm]=m.split('-');return MESES[+mm-1]+'/'+y.slice(2)};
+const addMes=(m,n)=>{let[y,mm]=m.split('-').map(Number);mm+=n;while(mm>12){mm-=12;y++}while(mm<1){mm+=12;y--}return y+'-'+String(mm).padStart(2,'0')};
+const pct=v=>isFinite(v)?(v*100).toFixed(1).replace('.',',')+'%':'–';
+
+function realizadoMes(mes){
+  const desp={}, ent={}; const h=(state.hist||{})[mes]||{};
+  state.movs.forEach(m=>{ if(!m.data.startsWith(mes))return; const c=m.cat||'none';
+    if(m.tipo==='in')ent[c]=(ent[c]||0)+m.valor; else desp[c]=(desp[c]||0)+m.valor; });
+  const inIds=new Set((state.catsIn||[]).map(c=>c.id));
+  Object.entries(h).forEach(([c,v])=>{ if(inIds.has(c))ent[c]=(ent[c]||0)+v; else desp[c]=(desp[c]||0)+v; });
+  return {desp,ent};
+}
+function resumoMes(mes){
+  const {desp,ent}=realizadoMes(mes); const cats=state.cats||[], cin=state.catsIn||[];
+  const sum=o=>Object.values(o).reduce((a,v)=>a+v,0);
+  const essIds=new Set(cats.filter(c=>c.ess).map(c=>c.id));
+  const vaIds=cin.filter(c=>c.restrito).map(c=>c.id);
+  const r={
+    prevEnt:cin.reduce((a,c)=>a+(+c.prev||0),0), prevDesp:cats.reduce((a,c)=>a+(+c.prev||0),0),
+    prevEss:cats.filter(c=>c.ess).reduce((a,c)=>a+(+c.prev||0),0),
+    prevVA:cin.filter(c=>c.restrito).reduce((a,c)=>a+(+c.prev||0),0),
+    realEnt:sum(ent), realDesp:sum(desp),
+    realEss:Object.entries(desp).filter(([k])=>essIds.has(k)).reduce((a,[,v])=>a+v,0),
+    realVA:vaIds.reduce((a,k)=>a+(ent[k]||0),0), desp, ent };
+  r.realNaoEss=r.realDesp-r.realEss;
+  return r;
+}
+function inputPrev(id,valor){ return `<input class="previn" type="number" step="0.01" min="0" inputmode="decimal" data-id="${esc(id)}" value="${(+valor||0).toFixed(2)}">`; }
+
+function renderOrc(){
+  if(!$('oMes').value)$('oMes').value=ymHoje();
+  const mes=$('oMes').value; const r=resumoMes(mes);
+  const sobraR=r.realEnt-r.realDesp, sobraP=r.prevEnt-r.prevDesp;
+  $('oEnt').textContent=brl(r.realEnt); $('oEntSub').textContent='previsto '+brl(r.prevEnt);
+  $('oDesp').textContent=brl(r.realDesp); $('oDespSub').textContent='previsto '+brl(r.prevDesp);
+  $('oSobra').textContent=brl(sobraR); $('oSobra').className=sobraR<0?'neg':'pos'; $('oSobraSub').textContent='prevista '+brl(sobraP);
+  $('oTaxa').textContent=r.realEnt?pct(sobraR/r.realEnt):'–'; $('oTaxaSub').textContent='prevista '+(r.prevEnt?pct(sobraP/r.prevEnt):'–');
+  $('oEss').textContent=r.realDesp?pct(r.realEss/r.realDesp):'–'; $('oEssSub').textContent=`${brl(r.realEss)} essenciais · previsto ${r.prevDesp?pct(r.prevEss/r.prevDesp):'–'}`;
+  $('oRendaDin').textContent=brl(r.realEnt-r.realVA); $('oRendaDinSub').textContent=`despesa em dinheiro (VA abatido): ${brl(Math.max(0,r.realDesp-r.realVA))}`;
+  const reserva=6*r.prevEss, saldoCx=invTotais().saldo;
+  $('oReserva').textContent=brl(reserva);
+  const ok=saldoCx>=reserva&&reserva>0; $('oResOk').textContent=reserva?(ok?'Sim':'Não'):'–'; $('oResOk').className=ok?'pos':'neg';
+  $('oResOkSub').textContent='saldo da caixinha: '+brl(saldoCx);
+
+  // entradas
+  $('oTbEnt').innerHTML=(state.catsIn||[]).map(c=>{const rv=r.ent[c.id]||0,d=rv-(+c.prev||0);
+    return `<tr><td>${esc(c.emoji)} ${esc(c.nome)}${c.restrito?' <span class="tag">uso restrito</span>':''}</td><td>${inputPrev(c.id,c.prev)}</td><td>${rv?brl(rv):'–'}</td><td class="${d<0?'neg':d>0?'pos':''}">${d?(d>0?'+':'−')+' '+brl(Math.abs(d)):'–'}</td></tr>`}).join('')
+    +`<tr class="tot"><td>Total</td><td>${brl(r.prevEnt)}</td><td>${brl(r.realEnt)}</td><td></td></tr>`;
+  // despesas
+  const linha=c=>{const rv=r.desp[c.id]||0,p=+c.prev||0,d=p-rv,frac=p?rv/p:(rv?1:0);
+    return `<tr><td>${esc(c.emoji)} ${esc(c.nome)}</td><td>${inputPrev(c.id,p)}</td><td>${rv?brl(rv):'–'}</td><td class="barcol"><span class="tr"><span class="fl${rv>p?' over':''}" style="width:${Math.min(100,frac*100)}%"></span></span></td><td class="${d<0?'neg':''}">${rv||p?(d<0?'−'+brl(-d)+' acima':brl(d)+' livre'):'–'}</td></tr>`};
+  const ess=(state.cats||[]).filter(c=>c.ess), nao=(state.cats||[]).filter(c=>!c.ess);
+  let h=`<tr class="grp"><td colspan="5">Essenciais</td></tr>`+ess.map(linha).join('')+`<tr class="tot"><td>Total essenciais</td><td>${brl(r.prevEss)}</td><td>${brl(r.realEss)}</td><td></td><td></td></tr>`;
+  h+=`<tr class="grp"><td colspan="5">Não essenciais</td></tr>`+nao.map(linha).join('')+`<tr class="tot"><td>Total não essenciais</td><td>${brl(r.prevDesp-r.prevEss)}</td><td>${brl(r.realNaoEss-(r.desp.none||0))}</td><td></td><td></td></tr>`;
+  if(r.desp.none)h+=`<tr><td>❔ Sem categoria</td><td>–</td><td>${brl(r.desp.none)}</td><td></td><td></td></tr>`;
+  h+=`<tr class="tot"><td>Total geral</td><td>${brl(r.prevDesp)}</td><td>${brl(r.realDesp)}</td><td></td><td class="${r.realDesp>r.prevDesp?'neg':''}">${brl(r.prevDesp-r.realDesp)}</td></tr>`;
+  $('oTbDesp').innerHTML=h;
+  document.querySelectorAll('#tabOrc .previn').forEach(inp=>inp.onchange=()=>{
+    const c=[...state.cats,...state.catsIn].find(x=>x.id===inp.dataset.id); if(!c)return;
+    c.prev=Math.max(0,parseFloat(inp.value)||0); salvar(); renderOrc();
+  });
+
+  // histórico
+  const anos=new Set([mes.slice(0,4),ymHoje().slice(0,4)]);
+  Object.keys(state.hist||{}).forEach(k=>anos.add(k.slice(0,4))); state.movs.forEach(m=>anos.add(m.data.slice(0,4)));
+  const selAno=$('oAno'); const anoSel=selAno.value||mes.slice(0,4);
+  selAno.innerHTML=[...anos].sort().map(a=>`<option${a===anoSel?' selected':''}>${a}</option>`).join('');
+  const ano=selAno.value; const linhas=[];
+  for(let i=1;i<=12;i++){const m=ano+'-'+String(i).padStart(2,'0');const q=resumoMes(m);linhas.push({m,q,s:q.realEnt-q.realDesp,vazio:!q.realEnt&&!q.realDesp});}
+  $('oTbHist').innerHTML=linhas.map(({m,q,s,vazio})=>vazio?`<tr class="mut"><td>${nomeMes(m)}</td><td colspan="6">–</td></tr>`:
+    `<tr${m===mes?' class="today"':''}><td>${nomeMes(m)}</td><td class="pos">${brl(q.realEnt)}</td><td class="neg">${brl(q.realDesp)}</td><td>${brl(q.realEss)}</td><td>${brl(q.realNaoEss)}</td><td class="${s<0?'neg':'pos'}"><b>${brl(s)}</b></td><td>${q.realEnt?pct(s/q.realEnt):'–'}</td></tr>`).join('');
+  $('oChHist').innerHTML=svgBarras(linhas.map(l=>({lbl:MESES[+l.m.slice(5)-1],v:l.vazio?null:l.s,tip:`${nomeMes(l.m)}: sobra ${brl(l.s)} · entradas ${brl(l.q.realEnt)} · despesas ${brl(l.q.realDesp)}`})),'Sobra do mês');
+}
+$('oMes').addEventListener('change',renderOrc);
+$('oAno').addEventListener('change',renderOrc);
+$('formLinha').addEventListener('submit',e=>{
+  e.preventDefault(); const nome=$('lNome').value.trim(); if(!nome)return;
+  const t=$('lTipo').value, lista=t==='in'?state.catsIn:state.cats;
+  if(lista.some(c=>norm(c.nome)===norm(nome)))return;
+  const c={id:'c'+Date.now(),nome,emoji:$('lEmoji').value.trim()||'🏷️',prev:parseFloat($('lPrev').value)||0};
+  if(t!=='in')c.ess=t==='E';
+  lista.push(c); $('lNome').value='';$('lEmoji').value='';$('lPrev').value=''; salvar(); render(); preencher();
+});
+
+// barras verticais (valores podem ser negativos); null = sem dado
+function svgBarras(itens,rotulo){
+  const W=560,H=190,pl=48,pb=22,pt=10,pr=6; const vals=itens.map(i=>i.v||0);
+  let mx=Math.max(0,...vals), mn=Math.min(0,...vals); if(mx===mn)mx=mn+1; const pad=(mx-mn)*.08; mx+=mx>0?pad:0; mn-=mn<0?pad:0;
+  const y=v=>pt+(H-pt-pb)*(mx-v)/(mx-mn); const step=(W-pl-pr)/itens.length, bw=Math.min(30,step*.62);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(rotulo)}">`;
+  for(let i=0;i<=4;i++){const v=mn+(mx-mn)*i/4;s+=`<line class="gl" x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${pl-4}" y="${y(v)+3}" text-anchor="end">${Math.abs(v)>=1000?(v/1000).toFixed(1)+'k':v.toFixed(0)}</text>`;}
+  itens.forEach((it,i)=>{const x=pl+i*step+(step-bw)/2;
+    s+=`<g class="col" data-tip="${esc(it.tip)}"><rect class="hit" x="${pl+i*step}" y="${pt}" width="${step}" height="${H-pt-pb}"/>`;
+    if(it.v!=null&&it.v!==0){const y0=y(0),y1=y(it.v);s+=`<rect class="b${it.v<0?' over':''}" x="${x}" y="${Math.min(y0,y1)}" width="${bw}" height="${Math.max(1,Math.abs(y1-y0))}" rx="3"/>`;}
+    s+=`</g><text class="ax" x="${pl+i*step+step/2}" y="${H-6}" text-anchor="middle">${it.lbl}</text>`;});
+  s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(0)}" y2="${y(0)}" style="stroke:var(--mut)"/></svg>`;
+  return `<div class="svgwrap">${s}</div>`;
+}
+
+// =================== INVESTIMENTOS ===================
+function invDef(){ return {meta:30000,fim:'2027-12',taxa:0.0094,movs:[],plano:{}}; }
+function invTotais(){
+  const inv=state.inv||invDef(); const t={carlos:0,geovanna:0,ret:0,rend:0,aportes:0,primeiro:null};
+  inv.movs.forEach(m=>{ if(m.tipo==='aporte'){t[m.quem==='geovanna'?'geovanna':'carlos']+=m.valor;t.aportes+=m.valor;const k=m.data.slice(0,7);if(!t.primeiro||k<t.primeiro)t.primeiro=k;}
+    else if(m.tipo==='retirada')t.ret+=m.valor; else t.rend+=m.valor; });
+  t.saldo=t.aportes+t.rend-t.ret; return t;
+}
+function renderInv(){
+  const inv=state.inv; const t=invTotais(); const hoje=ymHoje();
+  if(!$('iData').value)$('iData').value=iso(new Date());
+  if(document.activeElement!==$('iMetaIn'))$('iMetaIn').value=inv.meta;
+  if(document.activeElement!==$('iFimIn'))$('iFimIn').value=inv.fim;
+  $('iCen').value=String(inv.taxa); if($('iCen').value!==String(inv.taxa)){ $('iCen').insertAdjacentHTML('beforeend',`<option value="${inv.taxa}">Personalizado ${(inv.taxa*100).toFixed(2)}%</option>`); $('iCen').value=String(inv.taxa); }
+  const falta=Math.max(0,inv.meta-t.saldo);
+  $('iSaldo').textContent=brl(t.saldo); $('iSaldo').className=t.saldo<0?'neg':'pos'; $('iBoxSaldo').classList.toggle('bad',t.saldo<0);
+  $('iSaldoSub').textContent=`depositado ${brl(t.aportes)} − retirado ${brl(t.ret)}`+(t.rend?` + rendimentos ${brl(t.rend)}`:'');
+  $('iMeta').textContent=brl(inv.meta); $('iMetaSub').textContent=`${inv.meta?pct(t.saldo/inv.meta):'–'} atingido · falta ${brl(falta)} · até ${nomeMes(inv.fim)}`;
+  const meses=t.primeiro?(()=>{let n=1,m=t.primeiro;while(m<hoje){m=addMes(m,1);n++}return n})():0;
+  const medio=meses?t.aportes/meses:0;
+  $('iMedio').textContent=brl(medio); $('iMedioSub').textContent=meses?`${meses} meses desde ${nomeMes(t.primeiro)} · ${falta?'meta em ~'+Math.ceil(falta/Math.max(medio,1))+' meses nesse ritmo':'meta atingida 🎉'}`:'sem aportes ainda';
+  const essPrev=(state.cats||[]).filter(c=>c.ess).reduce((a,c)=>a+(+c.prev||0),0), reserva=6*essPrev, disp=t.saldo-reserva;
+  $('iDisp').textContent=brl(disp); $('iDisp').className=disp<0?'neg':'pos'; $('iDispSub').textContent=`saldo − reserva de emergência ideal (${brl(reserva)})`;
+  $('iCarlos').textContent=brl(t.carlos); $('iGeo').textContent=brl(t.geovanna); $('iRet').textContent=brl(t.ret); $('iRend').textContent=brl(t.rend);
+
+  // extrato
+  $('iLista').innerHTML=''; [...inv.movs].sort((a,b)=>b.data.localeCompare(a.data)||b.id-a.id).forEach(m=>{
+    const li=document.createElement('li'); const neg=m.tipo==='retirada';
+    const q=m.tipo==='aporte'?` · ${QUEM[m.quem]?.nome||''}`:''; const cl=m.classe?` · ${m.classe==='variavel'?'renda variável':'renda fixa'}`:'';
+    li.innerHTML=`<div>${m.tipo==='aporte'?'Aporte':m.tipo==='retirada'?'Retirada':'Rendimento'}${m.ref?' — '+esc(m.ref):''}<br><small>${fmt(m.data)}${q}${cl}</small></div><div style="display:flex;gap:8px;align-items:center"><b class="${neg?'neg':'pos'}">${neg?'−':'+'} ${brl(m.valor)}</b><button class="ghost" type="button" title="Excluir">✕</button></div>`;
+    li.querySelector('button').onclick=()=>{inv.movs=inv.movs.filter(x=>x.id!==m.id);salvar();renderInv();};
+    $('iLista').appendChild(li);
+  });
+  if(!inv.movs.length)$('iLista').innerHTML='<li class="vazio">Nenhuma movimentação ainda.</li>';
+
+  // cronograma
+  const ks=[...Object.keys(inv.plano),...inv.movs.map(m=>m.data.slice(0,7))].sort();
+  let ini=ks[0]||hoje; let fim=[inv.fim,hoje,ks[ks.length-1]||hoje].sort()[2];
+  let acum=0, rows='', m=ini, guard=0;
+  while(m<=fim&&guard++<240){
+    const esp=+inv.plano[m]||0; const doMes=inv.movs.filter(x=>x.data.startsWith(m));
+    const c=doMes.filter(x=>x.tipo==='aporte'&&x.quem!=='geovanna').reduce((a,x)=>a+x.valor,0);
+    const g=doMes.filter(x=>x.tipo==='aporte'&&x.quem==='geovanna').reduce((a,x)=>a+x.valor,0);
+    const r=doMes.filter(x=>x.tipo==='retirada').reduce((a,x)=>a+x.valor,0);
+    const rd=doMes.filter(x=>x.tipo==='rendimento').reduce((a,x)=>a+x.valor,0);
+    const dep=c+g; acum+=dep+rd-r;
+    let st; if(m>hoje)st='Pendente'; else if(m===hoje)st=esp&&dep>=esp?'Concluído':'Em andamento'; else st=!esp&&!dep?'–':dep>=esp?'Concluído':'Falhou';
+    const stc={'Concluído':'ok','Falhou':'bad','Em andamento':'run','Pendente':'pend'}[st]||'';
+    rows+=`<tr${m===hoje?' class="today"':''}><td>${nomeMes(m)}</td><td>${inputPrev('plano:'+m,esp)}</td><td>${c?brl(c):'–'}</td><td>${g?brl(g):'–'}</td><td>${dep?brl(dep):'–'}</td><td class="neg">${r?'− '+brl(r):'–'}</td><td class="${acum<0?'neg':''}">${m>hoje?'–':brl(acum)}</td><td><span class="st ${stc}">${st}</span></td></tr>`;
+    m=addMes(m,1);
+  }
+  $('iTbCron').innerHTML=rows;
+  document.querySelectorAll('#iTbCron .previn').forEach(inp=>inp.onchange=()=>{ const k=inp.dataset.id.slice(6); const v=Math.max(0,parseFloat(inp.value)||0); if(v)inv.plano[k]=v; else delete inv.plano[k]; salvar(); renderInv(); });
+
+  // projeção
+  const taxa=inv.taxa; let saldo=t.saldo; const pts=[{m:hoje,v:saldo}]; let atinge=saldo>=inv.meta?hoje:null;
+  const espHoje=+inv.plano[hoje]||0; const depHoje=inv.movs.filter(x=>x.tipo==='aporte'&&x.data.startsWith(hoje)).reduce((a,x)=>a+x.valor,0);
+  saldo+=Math.max(0,espHoje-depHoje);
+  let mm=hoje; const ate=[addMes(hoje,6),inv.fim].sort()[1];
+  while(mm<ate&&pts.length<120){ mm=addMes(mm,1); saldo=saldo*(1+taxa)+(+inv.plano[mm]||0); pts.push({m:mm,v:saldo}); if(!atinge&&saldo>=inv.meta)atinge=mm; }
+  $('iChProj').innerHTML=svgLinha(pts,inv.meta);
+  const fimPt=pts.find(p=>p.m===inv.fim)||pts[pts.length-1];
+  $('iProjHint').textContent=`Considera o esperado de cada mês no cronograma + rendimento de ${(taxa*100).toFixed(2).replace('.',',')}% a.m. Em ${nomeMes(fimPt.m)}: ${brl(fimPt.v)} (meta ${brl(inv.meta)}). `+(atinge?`Meta atingida em ${nomeMes(atinge)}.`:'Nesse cenário a meta não é atingida até lá.');
+}
+function svgLinha(pts,meta){
+  const W=560,H=200,pl=48,pb=22,pt=10,pr=8; const mx=Math.max(meta,...pts.map(p=>p.v))*1.08, mn=Math.min(0,...pts.map(p=>p.v));
+  const x=i=>pl+(W-pl-pr)*(pts.length<2?0:i/(pts.length-1)), y=v=>pt+(H-pt-pb)*(mx-v)/(mx-mn);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Projeção do saldo">`;
+  for(let i=0;i<=4;i++){const v=mn+(mx-mn)*i/4;s+=`<line class="gl" x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${pl-4}" y="${y(v)+3}" text-anchor="end">${(v/1000).toFixed(0)}k</text>`;}
+  s+=`<line class="cl" x1="${pl}" x2="${W-pr}" y1="${y(meta)}" y2="${y(meta)}"/><text class="ax" x="${W-pr}" y="${y(meta)-4}" text-anchor="end">meta ${brl(meta)}</text>`;
+  s+=`<polyline fill="none" stroke="var(--acc)" stroke-width="2" points="${pts.map((p,i)=>x(i)+','+y(p.v)).join(' ')}"/>`;
+  const every=Math.ceil(pts.length/8), cw=(W-pl-pr)/Math.max(1,pts.length-1);
+  pts.forEach((p,i)=>{ s+=`<g class="col" data-tip="${nomeMes(p.m)}: ${brl(p.v)}"><rect class="hit" x="${x(i)-cw/2}" y="${pt}" width="${cw}" height="${H-pt-pb}"/><circle cx="${x(i)}" cy="${y(p.v)}" r="${i===0?4:2.5}" fill="var(--acc)"/></g>`;
+    if(i%every===0)s+=`<text class="ax" x="${x(i)}" y="${H-6}" text-anchor="middle">${nomeMes(p.m)}</text>`; });
+  return `<div class="svgwrap">${s}</svg></div>`;
+}
+$('iTipo').addEventListener('change',()=>{const t=$('iTipo').value;$('iQuemBox').hidden=t!=='aporte';$('iClasseBox').hidden=t==='retirada';});
+$('formInv').addEventListener('submit',e=>{
+  e.preventDefault(); const v=parseFloat($('iVal').value); if(!(v>0))return; const t=$('iTipo').value;
+  const m={id:Date.now(),data:$('iData').value,tipo:t,valor:v,ref:$('iRef').value.trim()};
+  if(t==='aporte')m.quem=$('iQuem').value; if(t!=='retirada')m.classe=$('iClasse').value;
+  state.inv.movs.push(m); $('iVal').value='';$('iRef').value=''; salvar(); renderInv();
+});
+$('iCen').addEventListener('change',()=>{state.inv.taxa=parseFloat($('iCen').value);salvar();renderInv();});
+$('iMetaIn').addEventListener('change',()=>{state.inv.meta=Math.max(0,parseFloat($('iMetaIn').value)||0);salvar();renderInv();});
+$('iFimIn').addEventListener('change',()=>{if($('iFimIn').value){state.inv.fim=$('iFimIn').value;salvar();renderInv();}});
+
+// =================== IMPORTAR DADOS (JSON) ===================
+$('impFile').addEventListener('change',async()=>{
+  const f=$('impFile').files[0]; if(!f)return; const msg=$('impMsg');
+  try{
+    const d=JSON.parse(await f.text());
+    if(d.cats)Object.entries(d.cats).forEach(([id,o])=>{const c=state.cats.find(x=>x.id===id);if(c)Object.assign(c,o);});
+    if(d.catsIn)Object.entries(d.catsIn).forEach(([id,o])=>{const c=state.catsIn.find(x=>x.id===id);if(c)Object.assign(c,o);});
+    if(d.hist){state.hist=state.hist||{};Object.entries(d.hist).forEach(([m,o])=>state.hist[m]=Object.assign(state.hist[m]||{},o));}
+    if(d.inv){const inv=state.inv; ['meta','fim','taxa'].forEach(k=>{if(d.inv[k]!=null)inv[k]=d.inv[k]});
+      if(d.inv.plano)Object.assign(inv.plano,d.inv.plano);
+      if(d.inv.movs){const ids=new Set(inv.movs.map(m=>m.id));d.inv.movs.forEach(m=>{if(!ids.has(m.id))inv.movs.push(m)});}}
+    salvar(); render(); msg.textContent='✔ Dados importados.'; msg.className='pos';
+  }catch(e){ msg.textContent='Arquivo inválido: '+e.message; msg.className='neg'; }
+  $('impFile').value='';
+});
 </script>
 </body>
 </html>
