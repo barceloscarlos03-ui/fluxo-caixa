@@ -58,7 +58,8 @@ tr.negrow td{background:var(--negbg)}
 tr.today td{font-weight:700;outline:2px solid var(--acc);outline-offset:-2px}
 td.prev{color:var(--mut);font-style:italic}
 .hint{font-size:12px;color:var(--mut);margin-top:8px;line-height:1.45}
-.addrow{grid-template-columns:1fr 1.3fr 1.4fr 1.2fr .9fr auto}
+.addrow{grid-template-columns:repeat(4,minmax(0,1fr))}.addrow button{align-self:end}
+.cotanote{font-size:12px;color:var(--mut);margin:8px 0 0}
 @media (max-width:760px){.addrow{grid-template-columns:1fr 1fr}.addrow button{grid-column:span 2}}
 .tabs{max-width:980px;margin:6px auto 0;padding:0 16px;display:flex;gap:6px}
 .tabs button{background:transparent;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:7px 16px}
@@ -136,7 +137,7 @@ main{grid-template-columns:minmax(0,1fr)}.card,.charts>*{min-width:0}
   <section class="hero">
     <div class="kpi main" id="boxHoje"><span>Disponível hoje</span><b id="kHoje">–</b><small id="kHojeSub"></small></div>
     <div class="kpi"><span>Acumulado até ontem</span><b id="kAcum">–</b><small>sobras dos dias anteriores</small></div>
-    <div class="kpi"><span>Gasto hoje</span><b id="kGastoHoje" class="neg">–</b><small id="kCota"></small></div>
+    <div class="kpi"><span>Gasto hoje (Carlos)</span><b id="kGastoHoje" class="neg">–</b><small id="kCota"></small></div>
     <div class="kpi"><span>Saldo em conta (fim)</span><b id="kConta">–</b><small id="kContaSub"></small></div>
   </section>
 
@@ -147,15 +148,18 @@ main{grid-template-columns:minmax(0,1fr)}.card,.charts>*{min-width:0}
     <form id="form" class="addrow">
       <div><label>Data</label><input id="mData" type="date" required></div>
       <div><label>Tipo</label><select id="mTipo">
-        <option value="gasto">Gasto do dia (usa a cota)</option>
+        <option value="gasto">Gasto do dia</option>
         <option value="in">Entrada (salário etc.)</option>
         <option value="out">Saída fixa (aluguel, contas)</option>
       </select></div>
       <div><label>Descrição</label><input id="mDesc" placeholder="Ex.: Almoço, Uber, Salário" required autocomplete="off"></div>
       <div><label>Categoria</label><select id="mCat"></select></div>
+      <div><label>De quem</label><select id="mQuem"><option value="carlos">🙋‍♂️ Carlos</option><option value="geovanna">🙋‍♀️ Geovanna</option><option value="casal">👫 Casal</option></select></div>
+      <div id="mPagBox"><label>Pagamento</label><select id="mPag"><option value="pix">⚡ PIX</option><option value="debito">💳 Débito</option><option value="credito">💳 Crédito</option></select></div>
       <div><label>Valor (R$)</label><input id="mVal" type="number" step="0.01" min="0" inputmode="decimal" required></div>
       <button type="submit">Adicionar</button>
     </form>
+    <p class="cotanote">Só os <b>gastos do dia do Carlos</b> saem da cota diária. Gastos da Geovanna e do casal entram no saldo em conta e na análise.</p>
     <ul id="lista" class="mov"></ul>
   </section>
 
@@ -163,12 +167,12 @@ main{grid-template-columns:minmax(0,1fr)}.card,.charts>*{min-width:0}
     <h2>Dia a dia</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Data</th><th>Cota</th><th>Disponível</th><th>Gasto</th><th>Sobra → acumula</th><th>Entradas/saídas fixas</th><th>Saldo em conta</th></tr></thead>
+        <thead><tr><th>Data</th><th>Cota</th><th>Disponível</th><th>Gasto</th><th>Sobra → acumula</th><th>Outras movimentações</th><th>Saldo em conta</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
     <p class="hint"><b>Disponível</b> = cota do dia + o que sobrou dos dias anteriores. <b>Sobra</b> = disponível − gasto, e passa para o dia seguinte (se for negativa, o excesso é descontado dos próximos dias).<br>
-    Dias futuros (em itálico) supõem que você gaste exatamente a cota. Seus dados ficam salvos na sua conta e aparecem em qualquer aparelho.</p>
+    <b>Gasto</b> = gastos do dia do Carlos. <b>Outras movimentações</b> = entradas, saídas fixas e gastos da Geovanna/casal. Dias futuros (em itálico) supõem que você gaste exatamente a cota. Seus dados ficam salvos na sua conta e aparecem em qualquer aparelho.</p>
   </section>
 
   <details class="card" id="cfgBox">
@@ -216,6 +220,8 @@ main{grid-template-columns:minmax(0,1fr)}.card,.charts>*{min-width:0}
       </select></div>
       <div class="fbusca"><label>Buscar na descrição</label><input id="fBusca" placeholder="Ex.: ifood" autocomplete="off"></div>
     </div>
+    <div class="fcats"><label>Pessoa</label><div id="fQuem" class="chips"></div></div>
+    <div class="fcats"><label>Pagamento</label><div id="fPag" class="chips"></div></div>
     <div class="fcats"><label>Categorias <button type="button" class="link" id="fTodas">todas</button> · <button type="button" class="link" id="fNenhuma">nenhuma</button></label><div id="fCats" class="chips"></div></div>
   </section>
 
@@ -229,6 +235,8 @@ main{grid-template-columns:minmax(0,1fr)}.card,.charts>*{min-width:0}
   <div class="charts">
     <section class="card"><h2>Por categoria</h2><div id="chCat" class="hbars"></div><p class="hint">Toque numa categoria para filtrar só ela.</p></section>
     <section class="card"><h2 id="chDiaTit">Gasto por dia</h2><div id="chDia"></div><p class="hint" id="chDiaHint"></p></section>
+    <section class="card"><h2>Por pessoa</h2><div id="chQuem" class="hbars"></div><p class="hint">Toque para filtrar só ela.</p></section>
+    <section class="card"><h2>Por forma de pagamento</h2><div id="chPag" class="hbars"></div><p class="hint">Toque para filtrar só ela.</p></section>
     <section class="card"><h2>Por dia da semana</h2><div id="chSem" class="hbars"></div></section>
     <section class="card"><h2>5 maiores lançamentos</h2><ol id="top5" class="top5"></ol></section>
   </div>
@@ -237,7 +245,7 @@ main{grid-template-columns:minmax(0,1fr)}.card,.charts>*{min-width:0}
     <h2>Lançamentos do filtro <small id="aQtd" class="mutxt"></small></h2>
     <div class="tablewrap">
       <table class="sortable">
-        <thead><tr><th data-sort="data">Data ↓</th><th class="l" data-sort="desc">Descrição</th><th class="l" data-sort="cat">Categoria</th><th class="l">Tipo</th><th data-sort="valor">Valor</th></tr></thead>
+        <thead><tr><th data-sort="data">Data ↓</th><th class="l" data-sort="desc">Descrição</th><th class="l" data-sort="cat">Categoria</th><th class="l" data-sort="quem">Pessoa</th><th class="l" data-sort="pag">Pagamento</th><th class="l">Tipo</th><th data-sort="valor">Valor</th></tr></thead>
         <tbody id="aBody"></tbody>
       </table>
     </div>
@@ -278,8 +286,12 @@ const KW={
   sal:['salario','pagamento','holerite','adiantamento','vale'],
   extra:['freela','extra','venda','bico','pix recebido'],
   reemb:['reembolso','estorno','devolu']};
-const padrao=()=>({saldo:0,diario:21.5,inicio:iso(new Date()),dias:15,movs:[],v:3,cats:DEF_CATS.map(c=>({...c})),catsIn:DEF_CATS_IN.map(c=>({...c}))});
+const padrao=()=>({saldo:0,diario:21.5,inicio:iso(new Date()),dias:15,movs:[],v:4,cats:DEF_CATS.map(c=>({...c})),catsIn:DEF_CATS_IN.map(c=>({...c}))});
 const tipoNome={gasto:'gasto do dia',in:'entrada',out:'saída fixa'};
+const QUEM={carlos:{nome:'Carlos',emoji:'🙋‍♂️'},geovanna:{nome:'Geovanna',emoji:'🙋‍♀️'},casal:{nome:'Casal',emoji:'👫'}};
+const PAG={pix:{nome:'PIX',emoji:'⚡'},debito:{nome:'Débito',emoji:'💳'},credito:{nome:'Crédito',emoji:'💳'},none:{nome:'—',emoji:''}};
+const quemDe=m=>m.quem||'carlos';
+const pagDe=m=>m.tipo==='in'?'none':(m.pag||'pix');
 let state=padrao(), ref=null, unsub=null, timer=null;
 
 const firebaseConfig = {
@@ -369,7 +381,8 @@ function migrar(){
   if(!Array.isArray(state.cats)){state.cats=DEF_CATS.map(c=>({...c}));mudou=true;}
   if(!Array.isArray(state.catsIn)){state.catsIn=DEF_CATS_IN.map(c=>({...c}));mudou=true;}
   state.movs.forEach(m=>{ if(!m.cat){ m.cat=adivinhar(m.desc,m.tipo)||'none'; mudou=true; } });
-  if(state.v!==3){ if(state.v!==2)state.dias=15; state.v=3; mudou=true; }
+  state.movs.forEach(m=>{ if(!m.quem){m.quem='carlos';mudou=true;} if(m.tipo!=='in'&&!m.pag){m.pag='pix';mudou=true;} });
+  if(state.v!==4){ if(state.v!==2&&state.v!==3)state.dias=15; state.v=4; mudou=true; }
   return mudou;
 }
 function opcoesCat(sel,tipo,valor){
@@ -398,20 +411,23 @@ function preencher(){
 ['saldo','diario','inicio','dias'].forEach(k=>$(k).addEventListener('input',()=>{
   state[k]=k==='inicio'?$(k).value:parseFloat($(k).value)||0; salvar(); render();
 }));
-$('mTipo').addEventListener('change',()=>{ catManual=false; opcoesCat($('mCat'),$('mTipo').value); sugerir(); });
+$('mTipo').addEventListener('change',()=>{ catManual=false; opcoesCat($('mCat'),$('mTipo').value); sugerir(); $('mPagBox').hidden=$('mTipo').value==='in'; });
+try{ const u=JSON.parse(localStorage.getItem('fluxoUlt')||'{}'); if(u.quem)$('mQuem').value=u.quem; if(u.pag)$('mPag').value=u.pag; }catch(e){}
 $('mDesc').addEventListener('input',sugerir);
 $('mCat').addEventListener('change',()=>{ catManual=true; });
 function sugerir(){ if(catManual)return; const g=adivinhar($('mDesc').value,$('mTipo').value); if(g)$('mCat').value=g; }
 $('form').addEventListener('submit',e=>{
   e.preventDefault();
   const v=parseFloat($('mVal').value); if(!(v>0))return;
-  state.movs.push({id:Date.now(),data:$('mData').value,desc:$('mDesc').value.trim(),tipo:$('mTipo').value,cat:$('mCat').value||'none',valor:v});
+  state.movs.push({id:Date.now(),data:$('mData').value,desc:$('mDesc').value.trim(),tipo:$('mTipo').value,cat:$('mCat').value||'none',quem:$('mQuem').value,...($('mTipo').value!=='in'?{pag:$('mPag').value}:{}),valor:v});
+  try{localStorage.setItem('fluxoUlt',JSON.stringify({quem:$('mQuem').value,pag:$('mPag').value}))}catch(e){}
   state.movs.sort((a,b)=>a.data.localeCompare(b.data));
-  $('mDesc').value=''; $('mVal').value=''; $('mTipo').value='gasto'; catManual=false; opcoesCat($('mCat'),'gasto');
+  $('mDesc').value=''; $('mVal').value=''; $('mTipo').value='gasto'; $('mPagBox').hidden=false; catManual=false; opcoesCat($('mCat'),'gasto');
   salvar(); render(); $('mDesc').focus();
 });
 function del(id){ state.movs=state.movs.filter(m=>m.id!==id); salvar(); render(); }
 function mudarCat(id,cat){ const m=state.movs.find(m=>m.id===id); if(m){m.cat=cat; salvar(); render();} }
+function mudarCampo(id,k,v){ const m=state.movs.find(m=>m.id===id); if(m){m[k]=v; salvar(); render();} }
 
 // categorias na configuração
 $('formCat').addEventListener('submit',e=>{
@@ -437,8 +453,10 @@ function renderCatsCfg(){
   });
 }
 
-const sum=(ds,t)=>state.movs.filter(m=>m.data===ds&&m.tipo===t).reduce((a,m)=>a+m.valor,0);
-const has=(ds,t)=>state.movs.some(m=>m.data===ds&&m.tipo===t);
+const ehCota=m=>m.tipo==='gasto'&&quemDe(m)==='carlos';
+const sum=(ds,t)=>state.movs.filter(m=>m.data===ds&&(t==='gasto'?ehCota(m):m.tipo===t)).reduce((a,m)=>a+m.valor,0);
+const has=(ds,t)=>state.movs.some(m=>m.data===ds&&(t==='gasto'?ehCota(m):m.tipo===t));
+const sumOutros=ds=>state.movs.filter(m=>m.data===ds&&m.tipo==='gasto'&&!ehCota(m)).reduce((a,m)=>a+m.valor,0);
 
 function render(){
   if(!state.cats)return;
@@ -447,9 +465,12 @@ function render(){
   const lista=$('lista'); lista.innerHTML='';
   [...state.movs].reverse().forEach(m=>{
     const li=document.createElement('li'); const sinal=m.tipo==='in'?'+':'−';
-    li.innerHTML=`<div>${esc(m.desc)}<span class="tag">${tipoNome[m.tipo]||esc(m.tipo)}</span><br><small>${fmt(m.data)}</small> <select title="Categoria"></select></div><div style="display:flex;gap:8px;align-items:center"><b class="${m.tipo==='in'?'pos':'neg'}">${sinal} ${brl(m.valor)}</b><button class="ghost" type="button" title="Excluir">✕</button></div>`;
+    li.innerHTML=`<div>${esc(m.desc)}<span class="tag">${tipoNome[m.tipo]||esc(m.tipo)}</span><br><small>${fmt(m.data)}</small> <select title="Categoria"></select><select title="De quem">${Object.entries(QUEM).map(([k,q])=>`<option value="${k}">${q.emoji} ${q.nome}</option>`).join('')}</select>${m.tipo!=='in'?`<select title="Pagamento">${['pix','debito','credito'].map(k=>`<option value="${k}">${PAG[k].emoji} ${PAG[k].nome}</option>`).join('')}</select>`:''}</div><div style="display:flex;gap:8px;align-items:center"><b class="${m.tipo==='in'?'pos':'neg'}">${sinal} ${brl(m.valor)}</b><button class="ghost" type="button" title="Excluir">✕</button></div>`;
     const sel=li.querySelector('select'); opcoesCat(sel,m.tipo,m.cat||'none'); sel.value=m.cat||'none';
     sel.onchange=()=>mudarCat(m.id,sel.value);
+    const sels=li.querySelectorAll('select');
+    sels[1].value=quemDe(m); sels[1].onchange=()=>mudarCampo(m.id,'quem',sels[1].value);
+    if(sels[2]){ sels[2].value=pagDe(m); sels[2].onchange=()=>mudarCampo(m.id,'pag',sels[2].value); }
     li.querySelector('button').onclick=()=>del(m.id); lista.appendChild(li);
   });
 
@@ -469,7 +490,7 @@ function render(){
     const real=sum(ds,'gasto');
     const prev=futuro&&!has(ds,'gasto');
     const gasto=prev?cota:real;
-    const ent=sum(ds,'in'), sai=sum(ds,'out');
+    const ent=sum(ds,'in'), sai=sum(ds,'out')+sumOutros(ds);
     if(ds===hoje){ acumOntem=acum; dispHoje=disp; gastoHoje=real; }
     acum=disp-gasto;
     conta+=ent-sai-gasto;
@@ -512,7 +533,7 @@ function render(){
 }
 
 // ---------- análise ----------
-const fCats=new Set(); let fCatsAll=true; let ordem={k:'data',dir:-1};
+const fCats=new Set(); let fCatsAll=true; const fQuem=new Set(Object.keys(QUEM)), fPag=new Set(['pix','debito','credito','none']); let ordem={k:'data',dir:-1};
 const addDias=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return iso(d)};
 const nDias=(a,b)=>Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5)+1;
 ['fPer','fTipo','fDe','fAte'].forEach(id=>$(id).addEventListener('change',()=>{
@@ -524,7 +545,7 @@ $('fBusca').addEventListener('input',renderAnalise);
 $('fTodas').onclick=()=>{fCatsAll=true;fCats.clear();renderAnalise();};
 $('fNenhuma').onclick=()=>{fCatsAll=false;fCats.clear();renderAnalise();};
 document.querySelectorAll('table.sortable th[data-sort]').forEach(th=>th.onclick=()=>{
-  const k=th.dataset.sort; ordem=ordem.k===k?{k,dir:-ordem.dir}:{k,dir:k==='desc'||k==='cat'?1:-1}; renderAnalise();
+  const k=th.dataset.sort; ordem=ordem.k===k?{k,dir:-ordem.dir}:{k,dir:['desc','cat','quem','pag'].includes(k)?1:-1}; renderAnalise();
 });
 
 function periodo(p){
@@ -556,7 +577,11 @@ function renderAnalise(){
       renderAnalise(); };
     box.appendChild(s);
   });
-  const passa=(m,a,b)=>m.data>=a&&m.data<=b&&tipoOk(m,t)&&ativa(m.cat||'none')&&(!busca||norm(m.desc).includes(busca));
+  const chipsSet=(el,set,opts)=>{ const bx=$(el); bx.innerHTML=''; opts.forEach(([k,o])=>{ const s=document.createElement('span'); s.className='chip tog'+(set.has(k)?' on':''); s.textContent=`${o.emoji} ${o.nome}`; s.onclick=()=>{ set.has(k)?set.delete(k):set.add(k); renderAnalise(); }; bx.appendChild(s); }); };
+  chipsSet('fQuem',fQuem,Object.entries(QUEM));
+  $('fPag').parentElement.hidden=t==='in';
+  chipsSet('fPag',fPag,['pix','debito','credito'].map(k=>[k,PAG[k]]));
+  const passa=(m,a,b)=>m.data>=a&&m.data<=b&&tipoOk(m,t)&&ativa(m.cat||'none')&&fQuem.has(quemDe(m))&&(t==='in'||fPag.has(pagDe(m)))&&(!busca||norm(m.desc).includes(busca));
   const F=state.movs.filter(m=>passa(m,de,ate));
   const total=F.reduce((a,m)=>a+m.valor,0);
   const isIn=t==='in';
@@ -577,16 +602,16 @@ function renderAnalise(){
   const ini=[de,state.inicio||de].sort()[1], fimC=[ate,iso(new Date())].sort()[0];
   if(!isIn&&t!=='out'&&ini<=fimC){
     const nd=nDias(ini,fimC), cotaTot=nd*state.diario;
-    const g=F.filter(m=>m.tipo==='gasto'&&m.data>=ini&&m.data<=fimC).reduce((a,m)=>a+m.valor,0);
+    const g=F.filter(m=>ehCota(m)&&m.data>=ini&&m.data<=fimC).reduce((a,m)=>a+m.valor,0);
     const eco=cotaTot-g;
     $('aEcoLbl').textContent=eco>=0?'Economia da cota':'Passou da cota';
     $('aEco').textContent=brl(Math.abs(eco)); $('aEco').className=eco>=0?'pos':'neg';
-    $('aEcoSub').textContent=`usou ${cotaTot?(g/cotaTot*100).toFixed(0):0}% de ${brl(cotaTot)} (${nd} dias)`;
+    $('aEcoSub').textContent=`Carlos usou ${cotaTot?(g/cotaTot*100).toFixed(0):0}% de ${brl(cotaTot)} (${nd} dias)`;
   }else{ $('aEcoLbl').textContent='Economia da cota'; $('aEco').textContent='–'; $('aEco').className=''; $('aEcoSub').textContent='vale para gastos do dia'; }
   const mx=F.reduce((a,m)=>!a||m.valor>a.valor?m:a,null);
   $('aMax').textContent=mx?brl(mx.valor):'–';
   // dia com mais gasto
-  const porDia={}, porDiaG={}; F.forEach(m=>{porDia[m.data]=(porDia[m.data]||0)+m.valor; if(m.tipo==='gasto')porDiaG[m.data]=(porDiaG[m.data]||0)+m.valor;});
+  const porDia={}, porDiaG={}; F.forEach(m=>{porDia[m.data]=(porDia[m.data]||0)+m.valor; if(ehCota(m))porDiaG[m.data]=(porDiaG[m.data]||0)+m.valor;});
   const diaTop=Object.entries(porDia).sort((a,b)=>b[1]-a[1])[0];
   $('aMaxSub').textContent=mx?`${mx.desc} (${fmt(mx.data)})`+(diaTop?` · dia mais caro: ${fmt(diaTop[0])}, ${brl(diaTop[1])}`:''):'';
 
@@ -613,7 +638,7 @@ function renderAnalise(){
   }
   $('chDiaTit').textContent=porMes?'Gasto por mês':(isIn?'Entradas por dia':'Gasto por dia');
   const mostraCota=!porMes&&!isIn&&t!=='out';
-  $('chDiaHint').textContent=mostraCota?'Linha tracejada = cota diária. Barras vermelhas = dias em que os gastos do dia passaram da cota (saídas fixas não contam).':'';
+  $('chDiaHint').textContent=mostraCota?'Linha tracejada = cota diária. Barras vermelhas = dias em que os gastos do dia do Carlos passaram da cota.':'';
   const W=560,H=200,pl=44,pb=22,pt=8,pr=6;
   const vmax=Math.max(...buckets.map(b=>b.v),mostraCota?state.diario:0,1)*1.1;
   const step=(W-pl-pr)/buckets.length, bw=Math.max(2,Math.min(28,step-2));
@@ -623,7 +648,7 @@ function renderAnalise(){
   const every=Math.ceil(buckets.length/12);
   buckets.forEach((b,i)=>{
     const x=pl+i*step+(step-bw)/2, over=mostraCota&&b.g>state.diario;
-    const tip=`${b.tip}: ${brl(b.v)}`+(mostraCota&&b.g!==b.v?` (gastos do dia: ${brl(b.g)})`:'')+(mostraCota?` · cota ${brl(state.diario)}`:'');
+    const tip=`${b.tip}: ${brl(b.v)}`+(mostraCota&&b.g!==b.v?` (gastos do dia do Carlos: ${brl(b.g)})`:'')+(mostraCota?` · cota ${brl(state.diario)}`:'');
     svg+=`<g class="col" data-tip="${esc(tip)}"><rect class="hit" x="${pl+i*step}" y="${pt}" width="${step}" height="${H-pt-pb}"/>`;
     if(b.v>0)svg+=`<rect class="b${over?' over':''}" x="${x}" y="${y(b.v)}" width="${bw}" height="${Math.max(1,y(0)-y(b.v))}" rx="${Math.min(3,bw/3)}"/>`;
     svg+=`</g>`;
@@ -633,6 +658,18 @@ function renderAnalise(){
   svg+=`<line class="gl" x1="${pl}" x2="${W-pr}" y1="${y(0)}" y2="${y(0)}" style="stroke:var(--mut)"/></svg>`;
   $('chDia').innerHTML=svg;
 
+  const barras=(el,mapa,info,setRef)=>{
+    const rk2=Object.entries(mapa).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]); const mx2=rk2.length?rk2[0][1]:0;
+    const bx=$(el); bx.innerHTML=rk2.length?'':'<div class="vazio">Nada no filtro.</div>';
+    rk2.forEach(([k,v])=>{ const o=info[k]; const d=document.createElement('div'); d.className='hb click';
+      d.dataset.tip=`${o.emoji} ${o.nome}: ${brl(v)} · ${(v/total*100).toFixed(1)}%`;
+      d.innerHTML=`<span class="nm">${o.emoji} ${o.nome}</span><span class="tr"><span class="fl" style="width:${v/mx2*100}%;display:block"></span></span><span class="vl">${brl(v)}<small>${(v/total*100).toFixed(0)}%</small></span>`;
+      d.onclick=()=>{ setRef.clear(); setRef.add(k); if(setRef===fPag)setRef.add('none'); renderAnalise(); }; bx.appendChild(d); });
+  };
+  const pq={}, pp={}; F.forEach(m=>{ pq[quemDe(m)]=(pq[quemDe(m)]||0)+m.valor; if(m.tipo!=='in')pp[pagDe(m)]=(pp[pagDe(m)]||0)+m.valor; });
+  barras('chQuem',pq,QUEM,fQuem);
+  $('chPag').parentElement.hidden=t==='in';
+  barras('chPag',pp,PAG,fPag);
   // dia da semana
   const sem=[0,0,0,0,0,0,0], cnt=[0,0,0,0,0,0,0];
   for(let i=0;i<n;i++){const k=addDias(de,i);cnt[new Date(k+'T12:00:00').getDay()]++;}
@@ -652,13 +689,13 @@ function renderAnalise(){
   $('top5').innerHTML=top.length?top.map(m=>{const c=catInfo(m.cat);return `<li>${esc(m.desc)} <b>${brl(m.valor)}</b><br><small>${fmt(m.data)} · ${esc(c.emoji)} ${esc(c.nome)}</small></li>`}).join(''):'<div class="vazio">Nada no filtro.</div>';
 
   // tabela
-  const val=(m,k)=>k==='cat'?catInfo(m.cat).nome:k==='desc'?norm(m.desc):m[k];
+  const val=(m,k)=>k==='quem'?quemDe(m):k==='pag'?pagDe(m):k==='cat'?catInfo(m.cat).nome:k==='desc'?norm(m.desc):m[k];
   const L=[...F].sort((a,b)=>{const x=val(a,ordem.k),y=val(b,ordem.k);return (x>y?1:x<y?-1:0)*ordem.dir||b.id-a.id;});
   document.querySelectorAll('table.sortable th[data-sort]').forEach(th=>{
     const base=th.textContent.replace(/ [↑↓]$/,''); th.textContent=base+(th.dataset.sort===ordem.k?(ordem.dir>0?' ↑':' ↓'):'');
   });
   $('aQtd').textContent=`(${F.length})`;
-  $('aBody').innerHTML=L.length?L.map(m=>{const c=catInfo(m.cat);return `<tr><td>${fmt(m.data)}</td><td class="l">${esc(m.desc)}</td><td class="l">${esc(c.emoji)} ${esc(c.nome)}</td><td class="l">${tipoNome[m.tipo]||''}</td><td class="${m.tipo==='in'?'pos':'neg'}">${brl(m.valor)}</td></tr>`}).join(''):'<tr><td colspan="5" class="l vazio">Nenhum lançamento com esses filtros.</td></tr>';
+  $('aBody').innerHTML=L.length?L.map(m=>{const c=catInfo(m.cat);return `<tr><td>${fmt(m.data)}</td><td class="l">${esc(m.desc)}</td><td class="l">${esc(c.emoji)} ${esc(c.nome)}</td><td class="l">${QUEM[quemDe(m)].emoji} ${QUEM[quemDe(m)].nome}</td><td class="l">${m.tipo==='in'?'—':PAG[pagDe(m)].nome}</td><td class="l">${tipoNome[m.tipo]||''}</td><td class="${m.tipo==='in'?'pos':'neg'}">${brl(m.valor)}</td></tr>`}).join(''):'<tr><td colspan="7" class="l vazio">Nenhum lançamento com esses filtros.</td></tr>';
 }
 
 // tooltip
