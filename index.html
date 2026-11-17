@@ -58,6 +58,50 @@ tr.negrow td{background:var(--negbg)}
 tr.today td{font-weight:700;outline:2px solid var(--acc);outline-offset:-2px}
 td.prev{color:var(--mut);font-style:italic}
 .hint{font-size:12px;color:var(--mut);margin-top:8px;line-height:1.45}
+.addrow{grid-template-columns:1fr 1.3fr 1.4fr 1.2fr .9fr auto}
+@media (max-width:760px){.addrow{grid-template-columns:1fr 1fr}.addrow button{grid-column:span 2}}
+.tabs{max-width:980px;margin:6px auto 0;padding:0 16px;display:flex;gap:6px}
+.tabs button{background:transparent;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:7px 16px}
+.tabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+h3.sub{font-size:13px;margin:16px 0 8px;color:var(--mut);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:4px 6px 4px 10px;font-size:13px;background:var(--bg)}
+.chip button{background:transparent;color:var(--mut);padding:0 4px;font-size:13px;font-weight:500}
+.chip.tog{cursor:pointer;padding:5px 10px;user-select:none}
+.chip.tog.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.catrow{display:grid;grid-template-columns:.6fr 1.6fr 1fr auto;gap:8px;align-items:end;margin-top:12px}
+.mov li select{width:auto;padding:3px 6px;font-size:12px;margin-left:4px}
+.frow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.fcats{margin-top:12px}
+button.link{background:none;color:var(--acc);padding:0;font-size:12px;font-weight:600}
+.kpis4{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.charts{grid-template-columns:1fr}}
+.hbars{display:grid;gap:8px}
+.hb{display:grid;grid-template-columns:minmax(90px,34%) 1fr 118px;gap:8px;align-items:center;font-size:13px;cursor:default;padding:2px 0;border-radius:6px}
+.hb.click{cursor:pointer}.hb.click:hover{background:var(--bg)}
+.hb .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb .tr{height:14px;background:var(--line);border-radius:4px;overflow:hidden}
+.hb .fl{height:100%;background:var(--acc);border-radius:0 4px 4px 0;min-width:2px}
+.hb .vl{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.hb .vl small{color:var(--mut);margin-left:4px}
+#chDia svg{width:100%;height:auto;display:block}
+#chDia .ax{fill:var(--mut);font-size:10px}
+#chDia .gl{stroke:var(--line);stroke-width:1}
+#chDia .cl{stroke:var(--neg);stroke-width:1.5;stroke-dasharray:4 3}
+#chDia rect.b{fill:var(--acc)}#chDia rect.b.over{fill:var(--neg)}
+#chDia rect.hit{fill:transparent}
+#chDia g.col:hover rect.b{opacity:.75}
+.top5{margin:0;padding-left:20px;display:grid;gap:8px}
+.top5 li{font-size:14px}.top5 li b{float:right;font-variant-numeric:tabular-nums}
+.top5 small{color:var(--mut)}
+th.l,td.l{text-align:left}
+table.sortable th[data-sort]{cursor:pointer}
+.mutxt{color:var(--mut);font-weight:400}
+.tip{position:fixed;z-index:9;pointer-events:none;background:var(--ink);color:var(--card);font-size:12px;padding:6px 8px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.vazio{color:var(--mut);font-size:13px;padding:8px 0}
+main{grid-template-columns:minmax(0,1fr)}.card,.charts>*{min-width:0}
+@media (max-width:600px){.hb{grid-template-columns:minmax(80px,32%) 1fr 96px;font-size:12px}.catrow{grid-template-columns:.7fr 1.5fr}.catrow button{grid-column:span 2}}
 </style>
 </head>
 <body>
@@ -84,7 +128,11 @@ td.prev{color:var(--mut);font-style:italic}
     <button id="btnSair" class="ghost" type="button">Sair</button>
   </div>
 </header>
-<main>
+<nav class="tabs">
+  <button type="button" data-tab="lanc" class="on">Lançamentos</button>
+  <button type="button" data-tab="anal">Análise</button>
+</nav>
+<main id="tabLanc">
   <section class="hero">
     <div class="kpi main" id="boxHoje"><span>Disponível hoje</span><b id="kHoje">–</b><small id="kHojeSub"></small></div>
     <div class="kpi"><span>Acumulado até ontem</span><b id="kAcum">–</b><small>sobras dos dias anteriores</small></div>
@@ -98,12 +146,13 @@ td.prev{color:var(--mut);font-style:italic}
     <h2>Lançar</h2>
     <form id="form" class="addrow">
       <div><label>Data</label><input id="mData" type="date" required></div>
-      <div><label>Descrição</label><input id="mDesc" placeholder="Ex.: Almoço, Uber, Salário" required></div>
       <div><label>Tipo</label><select id="mTipo">
         <option value="gasto">Gasto do dia (usa a cota)</option>
         <option value="in">Entrada (salário etc.)</option>
         <option value="out">Saída fixa (aluguel, contas)</option>
       </select></div>
+      <div><label>Descrição</label><input id="mDesc" placeholder="Ex.: Almoço, Uber, Salário" required autocomplete="off"></div>
+      <div><label>Categoria</label><select id="mCat"></select></div>
       <div><label>Valor (R$)</label><input id="mVal" type="number" step="0.01" min="0" inputmode="decimal" required></div>
       <button type="submit">Adicionar</button>
     </form>
@@ -131,8 +180,70 @@ td.prev{color:var(--mut);font-style:italic}
       <div><label>Mostrar até (dias à frente de hoje)</label><input id="dias" type="number" min="0" max="730" value="15"></div>
     </div>
     <p class="hint">A cota começa a contar na data de início. O saldo em conta é opcional: serve para ver se o dinheiro total aguenta o período.</p>
+    <h3 class="sub">Categorias de gastos</h3>
+    <div id="catsOut" class="chips"></div>
+    <h3 class="sub">Categorias de entradas</h3>
+    <div id="catsIn" class="chips"></div>
+    <form id="formCat" class="catrow">
+      <div><label>Emoji</label><input id="cEmoji" maxlength="4" placeholder="🐶"></div>
+      <div><label>Nova categoria</label><input id="cNome" placeholder="Ex.: Pet" required></div>
+      <div><label>Para</label><select id="cPara"><option value="out">Gastos</option><option value="in">Entradas</option></select></div>
+      <button type="submit">Criar</button>
+    </form>
+    <p class="hint">Excluir uma categoria não apaga os lançamentos: eles passam a aparecer como "Sem categoria".</p>
   </details>
 </main>
+
+<main id="tabAnal" hidden>
+  <section class="card filtros">
+    <div class="frow">
+      <div><label>Período</label><select id="fPer">
+        <option value="mes">Este mês</option>
+        <option value="mesant">Mês passado</option>
+        <option value="7">Últimos 7 dias</option>
+        <option value="30">Últimos 30 dias</option>
+        <option value="90">Últimos 90 dias</option>
+        <option value="tudo">Tudo</option>
+        <option value="custom">Personalizado…</option>
+      </select></div>
+      <div class="fcustom" hidden><label>De</label><input id="fDe" type="date"></div>
+      <div class="fcustom" hidden><label>Até</label><input id="fAte" type="date"></div>
+      <div><label>Tipo</label><select id="fTipo">
+        <option value="desp">Todos os gastos</option>
+        <option value="gasto">Só gastos do dia</option>
+        <option value="out">Só saídas fixas</option>
+        <option value="in">Entradas</option>
+      </select></div>
+      <div class="fbusca"><label>Buscar na descrição</label><input id="fBusca" placeholder="Ex.: ifood" autocomplete="off"></div>
+    </div>
+    <div class="fcats"><label>Categorias <button type="button" class="link" id="fTodas">todas</button> · <button type="button" class="link" id="fNenhuma">nenhuma</button></label><div id="fCats" class="chips"></div></div>
+  </section>
+
+  <section class="kpis4">
+    <div class="kpi"><span id="aTotLbl">Total gasto</span><b id="aTot">–</b><small id="aTotSub"></small></div>
+    <div class="kpi"><span>Média por dia</span><b id="aMed">–</b><small id="aMedSub"></small></div>
+    <div class="kpi"><span id="aEcoLbl">Economia da cota</span><b id="aEco">–</b><small id="aEcoSub"></small></div>
+    <div class="kpi"><span>Maior gasto</span><b id="aMax">–</b><small id="aMaxSub"></small></div>
+  </section>
+
+  <div class="charts">
+    <section class="card"><h2>Por categoria</h2><div id="chCat" class="hbars"></div><p class="hint">Toque numa categoria para filtrar só ela.</p></section>
+    <section class="card"><h2 id="chDiaTit">Gasto por dia</h2><div id="chDia"></div><p class="hint" id="chDiaHint"></p></section>
+    <section class="card"><h2>Por dia da semana</h2><div id="chSem" class="hbars"></div></section>
+    <section class="card"><h2>5 maiores lançamentos</h2><ol id="top5" class="top5"></ol></section>
+  </div>
+
+  <section class="card">
+    <h2>Lançamentos do filtro <small id="aQtd" class="mutxt"></small></h2>
+    <div class="tablewrap">
+      <table class="sortable">
+        <thead><tr><th data-sort="data">Data ↓</th><th class="l" data-sort="desc">Descrição</th><th class="l" data-sort="cat">Categoria</th><th class="l">Tipo</th><th data-sort="valor">Valor</th></tr></thead>
+        <tbody id="aBody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<div id="tip" class="tip" hidden></div>
 </div>
 
 <script type="module">
@@ -148,7 +259,26 @@ const fmt=s=>{const[y,m,d]=s.split('-');return d+'/'+m+'/'+y};
 const wd=['dom','seg','ter','qua','qui','sex','sáb'];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const padrao=()=>({saldo:0,diario:21.5,inicio:iso(new Date()),dias:15,movs:[],v:2});
+const DEF_CATS=[
+  {id:'alim',nome:'Alimentação',emoji:'🍽️'},{id:'merc',nome:'Mercado',emoji:'🛒'},{id:'transp',nome:'Transporte',emoji:'🚗'},
+  {id:'casa',nome:'Casa e contas',emoji:'🏠'},{id:'saude',nome:'Saúde',emoji:'💊'},{id:'lazer',nome:'Lazer',emoji:'🎉'},
+  {id:'compras',nome:'Compras',emoji:'🛍️'},{id:'educ',nome:'Educação',emoji:'📚'},{id:'assin',nome:'Assinaturas',emoji:'📱'},
+  {id:'outros',nome:'Outros',emoji:'📦'}];
+const DEF_CATS_IN=[{id:'sal',nome:'Salário',emoji:'💰'},{id:'extra',nome:'Renda extra',emoji:'💵'},{id:'reemb',nome:'Reembolso',emoji:'↩️'},{id:'outin',nome:'Outras entradas',emoji:'➕'}];
+const KW={
+  alim:['almoco','lanche','ifood','restaurante','jantar','cafe','pizza','hamburg','delivery','marmita','alimenta','refeicao','padaria','salgado','acai','sorvete','rappi','bk','mcdonald'],
+  merc:['mercado','supermercado','feira','atacad','assai','hortifruti','acougue','carrefour','extrabom'],
+  transp:['uber','99','combustivel','gasolina','etanol','posto','onibus','passagem','estacionamento','pedagio','taxi','metro','transcol'],
+  casa:['aluguel','luz','energia','agua','internet','condominio','gas','iptu','conta de','edp','cesan'],
+  saude:['farmacia','remedio','consulta','medic','exame','dentista','plano de saude','academia','drogaria'],
+  lazer:['cinema','bar','show','passeio','viagem','festa','cerveja','balada','jogo','praia'],
+  compras:['roupa','tenis','sapato','shopee','amazon','mercado livre','shein','eletronic','presente','loja'],
+  educ:['faculdade','curso','livro','apostila','mensalidade','escola','concurso','material'],
+  assin:['netflix','spotify','prime','disney','hbo','max','youtube','assinatura','celular','plano','icloud','google one','chatgpt','claude'],
+  sal:['salario','pagamento','holerite','adiantamento','vale'],
+  extra:['freela','extra','venda','bico','pix recebido'],
+  reemb:['reembolso','estorno','devolu']};
+const padrao=()=>({saldo:0,diario:21.5,inicio:iso(new Date()),dias:15,movs:[],v:3,cats:DEF_CATS.map(c=>({...c})),catsIn:DEF_CATS_IN.map(c=>({...c}))});
 const tipoNome={gasto:'gasto do dia',in:'entrada',out:'saída fixa'};
 let state=padrao(), ref=null, unsub=null, timer=null;
 
@@ -196,14 +326,14 @@ onAuthStateChanged(auth,async user=>{
     if(!snap.exists()){
       // primeira vez: aproveita dados salvos antes só neste navegador
       let local=null; try{local=JSON.parse(localStorage.getItem('fluxoCaixa'))}catch(e){}
-      state=Object.assign(padrao(),local||{}); state.v=2;
+      state=Object.assign(padrao(),local||{}); migrar();
       await setDoc(ref,state);
     }
   }catch(e){ $('sync').textContent='Erro ao carregar dados'; }
   unsub=onSnapshot(ref,s=>{
     if(!s.exists()||s.metadata.hasPendingWrites)return;
     state=Object.assign(padrao(),s.data());
-    if(state.v!==2){ state.v=2; state.dias=15; salvar(); } // migração para o modelo de saldo diário
+    if(migrar()) salvar(); // categorias + saldo diário
     preencher(); render();
     $('sync').textContent='Sincronizado';
   });
@@ -219,32 +349,107 @@ function salvar(){
   },500);
 }
 
+// ---------- categorias ----------
+function catsDe(tipo){ return tipo==='in'?(state.catsIn||[]):(state.cats||[]); }
+function catInfo(id){
+  const c=[...(state.cats||[]),...(state.catsIn||[])].find(c=>c.id===id);
+  return c||{id:'none',nome:'Sem categoria',emoji:'❔'};
+}
+const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+function adivinhar(desc,tipo){
+  const d=norm(desc); if(!d)return null;
+  for(const c of catsDe(tipo)){
+    const kws=[norm(c.nome),...(KW[c.id]||[])];
+    if(kws.some(k=>k&&d.includes(k)))return c.id;
+  }
+  return null;
+}
+function migrar(){
+  let mudou=false;
+  if(!Array.isArray(state.cats)){state.cats=DEF_CATS.map(c=>({...c}));mudou=true;}
+  if(!Array.isArray(state.catsIn)){state.catsIn=DEF_CATS_IN.map(c=>({...c}));mudou=true;}
+  state.movs.forEach(m=>{ if(!m.cat){ m.cat=adivinhar(m.desc,m.tipo)||'none'; mudou=true; } });
+  if(state.v!==3){ if(state.v!==2)state.dias=15; state.v=3; mudou=true; }
+  return mudou;
+}
+function opcoesCat(sel,tipo,valor){
+  sel.innerHTML=catsDe(tipo).map(c=>`<option value="${esc(c.id)}">${esc(c.emoji)} ${esc(c.nome)}</option>`).join('')+`<option value="none">❔ Sem categoria</option>`;
+  sel.value=valor&&[...sel.options].some(o=>o.value===valor)?valor:sel.options[0].value;
+}
+
+// ---------- abas ----------
+let aba='lanc';
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  aba=b.dataset.tab;
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  $('tabLanc').hidden=aba!=='lanc'; $('tabAnal').hidden=aba!=='anal';
+  render();
+});
+
+// ---------- formulário ----------
+let catManual=false;
 function preencher(){
   const a=document.activeElement;
   ['saldo','diario','inicio','dias'].forEach(k=>{ if(a!==$(k)) $(k).value=state[k]; });
   if(!$('mData').value)$('mData').value=iso(new Date());
   if(!state.movs.length)$('cfgBox').open=true;
+  if(a!==$('mCat'))opcoesCat($('mCat'),$('mTipo').value,$('mCat').value);
 }
-
 ['saldo','diario','inicio','dias'].forEach(k=>$(k).addEventListener('input',()=>{
   state[k]=k==='inicio'?$(k).value:parseFloat($(k).value)||0; salvar(); render();
 }));
+$('mTipo').addEventListener('change',()=>{ catManual=false; opcoesCat($('mCat'),$('mTipo').value); sugerir(); });
+$('mDesc').addEventListener('input',sugerir);
+$('mCat').addEventListener('change',()=>{ catManual=true; });
+function sugerir(){ if(catManual)return; const g=adivinhar($('mDesc').value,$('mTipo').value); if(g)$('mCat').value=g; }
 $('form').addEventListener('submit',e=>{
   e.preventDefault();
   const v=parseFloat($('mVal').value); if(!(v>0))return;
-  state.movs.push({id:Date.now(),data:$('mData').value,desc:$('mDesc').value.trim(),tipo:$('mTipo').value,valor:v});
+  state.movs.push({id:Date.now(),data:$('mData').value,desc:$('mDesc').value.trim(),tipo:$('mTipo').value,cat:$('mCat').value||'none',valor:v});
   state.movs.sort((a,b)=>a.data.localeCompare(b.data));
-  $('mDesc').value=''; $('mVal').value=''; $('mTipo').value='gasto'; salvar(); render(); $('mDesc').focus();
+  $('mDesc').value=''; $('mVal').value=''; $('mTipo').value='gasto'; catManual=false; opcoesCat($('mCat'),'gasto');
+  salvar(); render(); $('mDesc').focus();
 });
 function del(id){ state.movs=state.movs.filter(m=>m.id!==id); salvar(); render(); }
+function mudarCat(id,cat){ const m=state.movs.find(m=>m.id===id); if(m){m.cat=cat; salvar(); render();} }
+
+// categorias na configuração
+$('formCat').addEventListener('submit',e=>{
+  e.preventDefault();
+  const nome=$('cNome').value.trim(); if(!nome)return;
+  const lista=$('cPara').value==='in'?state.catsIn:state.cats;
+  if(lista.some(c=>norm(c.nome)===norm(nome)))return;
+  lista.push({id:'c'+Date.now(),nome,emoji:$('cEmoji').value.trim()||'🏷️'});
+  $('cNome').value=''; $('cEmoji').value=''; salvar(); render(); preencher();
+});
+function delCat(id){
+  state.cats=state.cats.filter(c=>c.id!==id); state.catsIn=state.catsIn.filter(c=>c.id!==id);
+  fCats.delete(id); salvar(); render(); preencher();
+}
+function renderCatsCfg(){
+  [['catsOut',state.cats],['catsIn',state.catsIn]].forEach(([el,arr])=>{
+    const box=$(el); box.innerHTML='';
+    arr.forEach(c=>{
+      const s=document.createElement('span'); s.className='chip';
+      s.innerHTML=`${esc(c.emoji)} ${esc(c.nome)} <button type="button" title="Excluir categoria">✕</button>`;
+      s.querySelector('button').onclick=()=>delCat(c.id); box.appendChild(s);
+    });
+  });
+}
+
 const sum=(ds,t)=>state.movs.filter(m=>m.data===ds&&m.tipo===t).reduce((a,m)=>a+m.valor,0);
 const has=(ds,t)=>state.movs.some(m=>m.data===ds&&m.tipo===t);
 
 function render(){
+  if(!state.cats)return;
+  renderCatsCfg();
+  if(aba==='anal'){ renderAnalise(); return; }
   const lista=$('lista'); lista.innerHTML='';
   [...state.movs].reverse().forEach(m=>{
     const li=document.createElement('li'); const sinal=m.tipo==='in'?'+':'−';
-    li.innerHTML=`<div>${esc(m.desc)}<span class="tag">${tipoNome[m.tipo]||esc(m.tipo)}</span><br><small>${fmt(m.data)}</small></div><div style="display:flex;gap:8px;align-items:center"><b class="${m.tipo==='in'?'pos':'neg'}">${sinal} ${brl(m.valor)}</b><button class="ghost" type="button" title="Excluir">✕</button></div>`;
+    li.innerHTML=`<div>${esc(m.desc)}<span class="tag">${tipoNome[m.tipo]||esc(m.tipo)}</span><br><small>${fmt(m.data)}</small> <select title="Categoria"></select></div><div style="display:flex;gap:8px;align-items:center"><b class="${m.tipo==='in'?'pos':'neg'}">${sinal} ${brl(m.valor)}</b><button class="ghost" type="button" title="Excluir">✕</button></div>`;
+    const sel=li.querySelector('select'); opcoesCat(sel,m.tipo,m.cat||'none'); sel.value=m.cat||'none';
+    sel.onchange=()=>mudarCat(m.id,sel.value);
     li.querySelector('button').onclick=()=>del(m.id); lista.appendChild(li);
   });
 
@@ -282,7 +487,7 @@ function render(){
       <td class="${conta<0?'neg':''}">${brl(conta)}</td>`;
     rows.push(tr);
   }
-  rows.reverse().forEach(r=>tb.appendChild(r)); // mais recente em cima
+  rows.reverse().forEach(r=>tb.appendChild(r));
 
   if(dispHoje===null){
     $('kHoje').textContent='–'; $('kHojeSub').textContent='cota começa em '+fmt(state.inicio);
@@ -305,6 +510,168 @@ function render(){
   if(primeiroNegConta)msgs.push('⚠ O saldo em conta fica negativo a partir de '+fmt(primeiroNegConta)+'.');
   al.style.display=msgs.length?'block':'none'; al.innerHTML=msgs.join('<br>');
 }
+
+// ---------- análise ----------
+const fCats=new Set(); let fCatsAll=true; let ordem={k:'data',dir:-1};
+const addDias=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return iso(d)};
+const nDias=(a,b)=>Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5)+1;
+['fPer','fTipo','fDe','fAte'].forEach(id=>$(id).addEventListener('change',()=>{
+  if(id==='fTipo'){fCatsAll=true;fCats.clear();}
+  if(id==='fPer'&&$('fPer').value==='custom'&&!$('fDe').value){const p=periodo('30');$('fDe').value=p.de;$('fAte').value=p.ate;}
+  renderAnalise();
+}));
+$('fBusca').addEventListener('input',renderAnalise);
+$('fTodas').onclick=()=>{fCatsAll=true;fCats.clear();renderAnalise();};
+$('fNenhuma').onclick=()=>{fCatsAll=false;fCats.clear();renderAnalise();};
+document.querySelectorAll('table.sortable th[data-sort]').forEach(th=>th.onclick=()=>{
+  const k=th.dataset.sort; ordem=ordem.k===k?{k,dir:-ordem.dir}:{k,dir:k==='desc'||k==='cat'?1:-1}; renderAnalise();
+});
+
+function periodo(p){
+  const hoje=iso(new Date()); const [y,m]=hoje.split('-').map(Number);
+  if(p==='mes')return{de:`${y}-${String(m).padStart(2,'0')}-01`,ate:hoje};
+  if(p==='mesant'){const d=new Date(y,m-2,1,12),f=new Date(y,m-1,0,12);return{de:iso(d),ate:iso(f)};}
+  if(p==='tudo'){const ds=state.movs.map(x=>x.data).sort();const de=[ds[0]||hoje,state.inicio||hoje].sort()[0];return{de,ate:[ds[ds.length-1]||hoje,hoje].sort()[1]};}
+  if(p==='custom'){let de=$('fDe').value||hoje,ate=$('fAte').value||hoje;if(de>ate)[de,ate]=[ate,de];return{de,ate};}
+  return{de:addDias(hoje,-(+p-1)),ate:hoje};
+}
+function tipoOk(m,t){ return t==='desp'?m.tipo!=='in':m.tipo===t; }
+
+function renderAnalise(){
+  if(!state.cats)return;
+  const per=$('fPer').value, t=$('fTipo').value;
+  document.querySelectorAll('.fcustom').forEach(e=>e.hidden=per!=='custom');
+  const {de,ate}=periodo(per); const n=nDias(de,ate);
+  const busca=norm($('fBusca').value.trim());
+  // chips de categoria
+  const cats=t==='in'?state.catsIn:state.cats;
+  const todasIds=[...cats.map(c=>c.id),'none'];
+  const ativa=id=>fCatsAll||fCats.has(id);
+  const box=$('fCats'); box.innerHTML='';
+  [...cats,{id:'none',nome:'Sem categoria',emoji:'❔'}].forEach(c=>{
+    const s=document.createElement('span'); s.className='chip tog'+(ativa(c.id)?' on':''); s.textContent=`${c.emoji} ${c.nome}`;
+    s.onclick=()=>{ if(fCatsAll){fCatsAll=false;todasIds.forEach(i=>fCats.add(i));}
+      fCats.has(c.id)?fCats.delete(c.id):fCats.add(c.id);
+      if(todasIds.every(i=>fCats.has(i))){fCatsAll=true;fCats.clear();}
+      renderAnalise(); };
+    box.appendChild(s);
+  });
+  const passa=(m,a,b)=>m.data>=a&&m.data<=b&&tipoOk(m,t)&&ativa(m.cat||'none')&&(!busca||norm(m.desc).includes(busca));
+  const F=state.movs.filter(m=>passa(m,de,ate));
+  const total=F.reduce((a,m)=>a+m.valor,0);
+  const isIn=t==='in';
+  // comparação com o período anterior de mesmo tamanho
+  let comp='';
+  if(per!=='tudo'){
+    const pa=addDias(de,-n), pb=addDias(de,-1);
+    const ant=state.movs.filter(m=>passa(m,pa,pb)).reduce((a,m)=>a+m.valor,0);
+    if(ant>0){const v=(total-ant)/ant*100; comp=`${v>=0?'▲':'▼'} ${Math.abs(v).toFixed(0)}% vs. período anterior (${brl(ant)})`;}
+    else comp='sem lançamentos no período anterior';
+  }
+  $('aTotLbl').textContent=isIn?'Total recebido':'Total gasto';
+  $('aTot').textContent=brl(total); $('aTot').className=isIn?'pos':'neg';
+  $('aTotSub').textContent=`${fmt(de)} a ${fmt(ate)} · ${comp}`;
+  $('aMed').textContent=brl(total/n);
+  $('aMedSub').textContent=isIn?`${n} dias`:`cota diária: ${brl(state.diario)} · ${n} dias`;
+  // economia da cota (só gastos do dia, dias já vividos desde o início)
+  const ini=[de,state.inicio||de].sort()[1], fimC=[ate,iso(new Date())].sort()[0];
+  if(!isIn&&t!=='out'&&ini<=fimC){
+    const nd=nDias(ini,fimC), cotaTot=nd*state.diario;
+    const g=F.filter(m=>m.tipo==='gasto'&&m.data>=ini&&m.data<=fimC).reduce((a,m)=>a+m.valor,0);
+    const eco=cotaTot-g;
+    $('aEcoLbl').textContent=eco>=0?'Economia da cota':'Passou da cota';
+    $('aEco').textContent=brl(Math.abs(eco)); $('aEco').className=eco>=0?'pos':'neg';
+    $('aEcoSub').textContent=`usou ${cotaTot?(g/cotaTot*100).toFixed(0):0}% de ${brl(cotaTot)} (${nd} dias)`;
+  }else{ $('aEcoLbl').textContent='Economia da cota'; $('aEco').textContent='–'; $('aEco').className=''; $('aEcoSub').textContent='vale para gastos do dia'; }
+  const mx=F.reduce((a,m)=>!a||m.valor>a.valor?m:a,null);
+  $('aMax').textContent=mx?brl(mx.valor):'–';
+  // dia com mais gasto
+  const porDia={}, porDiaG={}; F.forEach(m=>{porDia[m.data]=(porDia[m.data]||0)+m.valor; if(m.tipo==='gasto')porDiaG[m.data]=(porDiaG[m.data]||0)+m.valor;});
+  const diaTop=Object.entries(porDia).sort((a,b)=>b[1]-a[1])[0];
+  $('aMaxSub').textContent=mx?`${mx.desc} (${fmt(mx.data)})`+(diaTop?` · dia mais caro: ${fmt(diaTop[0])}, ${brl(diaTop[1])}`:''):'';
+
+  // por categoria
+  const pc={}; F.forEach(m=>{const c=m.cat||'none';pc[c]=(pc[c]||0)+m.valor;});
+  const rk=Object.entries(pc).sort((a,b)=>b[1]-a[1]); const maxC=rk.length?rk[0][1]:0;
+  const cc=$('chCat'); cc.innerHTML=rk.length?'':'<div class="vazio">Nada no filtro.</div>';
+  rk.forEach(([id,v])=>{
+    const c=catInfo(id); const d=document.createElement('div'); d.className='hb click';
+    d.dataset.tip=`${c.emoji} ${c.nome}: ${brl(v)} · ${(v/total*100).toFixed(1)}% · ${F.filter(m=>(m.cat||'none')===id).length} lançamento(s)`;
+    d.innerHTML=`<span class="nm">${esc(c.emoji)} ${esc(c.nome)}</span><span class="tr"><span class="fl" style="width:${v/maxC*100}%;display:block"></span></span><span class="vl">${brl(v)}<small>${(v/total*100).toFixed(0)}%</small></span>`;
+    d.onclick=()=>{fCatsAll=false;fCats.clear();fCats.add(id);renderAnalise();};
+    cc.appendChild(d);
+  });
+
+  // por dia (ou por mês se o período for longo)
+  const porMes=n>92; const buckets=[];
+  if(porMes){
+    const mm={}; F.forEach(m=>{const k=m.data.slice(0,7);mm[k]=(mm[k]||0)+m.valor;});
+    let d=new Date(de.slice(0,7)+'-01T12:00:00'); const end=ate.slice(0,7);
+    while(iso(d).slice(0,7)<=end){const k=iso(d).slice(0,7);buckets.push({k,lbl:k.slice(5)+'/'+k.slice(2,4),v:mm[k]||0,tip:`${k.slice(5)}/${k.slice(0,4)}`});d.setMonth(d.getMonth()+1);}
+  }else{
+    for(let i=0;i<n;i++){const k=addDias(de,i);const dd=new Date(k+'T12:00:00');buckets.push({k,lbl:k.slice(8),v:porDia[k]||0,g:porDiaG[k]||0,tip:`${fmt(k)} (${wd[dd.getDay()]})`});}
+  }
+  $('chDiaTit').textContent=porMes?'Gasto por mês':(isIn?'Entradas por dia':'Gasto por dia');
+  const mostraCota=!porMes&&!isIn&&t!=='out';
+  $('chDiaHint').textContent=mostraCota?'Linha tracejada = cota diária. Barras vermelhas = dias em que os gastos do dia passaram da cota (saídas fixas não contam).':'';
+  const W=560,H=200,pl=44,pb=22,pt=8,pr=6;
+  const vmax=Math.max(...buckets.map(b=>b.v),mostraCota?state.diario:0,1)*1.1;
+  const step=(W-pl-pr)/buckets.length, bw=Math.max(2,Math.min(28,step-2));
+  const y=v=>pt+(H-pt-pb)*(1-v/vmax);
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfico de gastos">`;
+  for(let i=0;i<=4;i++){const v=vmax/1.1*i/4;svg+=`<line class="gl" x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${pl-4}" y="${y(v)+3}" text-anchor="end">${v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(0)}</text>`;}
+  const every=Math.ceil(buckets.length/12);
+  buckets.forEach((b,i)=>{
+    const x=pl+i*step+(step-bw)/2, over=mostraCota&&b.g>state.diario;
+    const tip=`${b.tip}: ${brl(b.v)}`+(mostraCota&&b.g!==b.v?` (gastos do dia: ${brl(b.g)})`:'')+(mostraCota?` · cota ${brl(state.diario)}`:'');
+    svg+=`<g class="col" data-tip="${esc(tip)}"><rect class="hit" x="${pl+i*step}" y="${pt}" width="${step}" height="${H-pt-pb}"/>`;
+    if(b.v>0)svg+=`<rect class="b${over?' over':''}" x="${x}" y="${y(b.v)}" width="${bw}" height="${Math.max(1,y(0)-y(b.v))}" rx="${Math.min(3,bw/3)}"/>`;
+    svg+=`</g>`;
+    if(i%every===0)svg+=`<text class="ax" x="${pl+i*step+step/2}" y="${H-6}" text-anchor="middle">${b.lbl}</text>`;
+  });
+  if(mostraCota)svg+=`<line class="cl" x1="${pl}" x2="${W-pr}" y1="${y(state.diario)}" y2="${y(state.diario)}"/>`;
+  svg+=`<line class="gl" x1="${pl}" x2="${W-pr}" y1="${y(0)}" y2="${y(0)}" style="stroke:var(--mut)"/></svg>`;
+  $('chDia').innerHTML=svg;
+
+  // dia da semana
+  const sem=[0,0,0,0,0,0,0], cnt=[0,0,0,0,0,0,0];
+  for(let i=0;i<n;i++){const k=addDias(de,i);cnt[new Date(k+'T12:00:00').getDay()]++;}
+  F.forEach(m=>sem[new Date(m.data+'T12:00:00').getDay()]+=m.valor);
+  const ordemSem=[1,2,3,4,5,6,0], nomes=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const maxS=Math.max(...sem,0); const cs=$('chSem'); cs.innerHTML=total?'':'<div class="vazio">Nada no filtro.</div>';
+  if(total)ordemSem.forEach(i=>{
+    const d=document.createElement('div'); d.className='hb';
+    const med=cnt[i]?sem[i]/cnt[i]:0;
+    d.dataset.tip=`${nomes[i]}: ${brl(sem[i])} no total · média ${brl(med)} por ${nomes[i].toLowerCase()} (${cnt[i]} no período)`;
+    d.innerHTML=`<span class="nm">${nomes[i]}</span><span class="tr"><span class="fl" style="width:${maxS?sem[i]/maxS*100:0}%;display:block"></span></span><span class="vl">${brl(sem[i])}</span>`;
+    cs.appendChild(d);
+  });
+
+  // top 5
+  const top=[...F].sort((a,b)=>b.valor-a.valor).slice(0,5);
+  $('top5').innerHTML=top.length?top.map(m=>{const c=catInfo(m.cat);return `<li>${esc(m.desc)} <b>${brl(m.valor)}</b><br><small>${fmt(m.data)} · ${esc(c.emoji)} ${esc(c.nome)}</small></li>`}).join(''):'<div class="vazio">Nada no filtro.</div>';
+
+  // tabela
+  const val=(m,k)=>k==='cat'?catInfo(m.cat).nome:k==='desc'?norm(m.desc):m[k];
+  const L=[...F].sort((a,b)=>{const x=val(a,ordem.k),y=val(b,ordem.k);return (x>y?1:x<y?-1:0)*ordem.dir||b.id-a.id;});
+  document.querySelectorAll('table.sortable th[data-sort]').forEach(th=>{
+    const base=th.textContent.replace(/ [↑↓]$/,''); th.textContent=base+(th.dataset.sort===ordem.k?(ordem.dir>0?' ↑':' ↓'):'');
+  });
+  $('aQtd').textContent=`(${F.length})`;
+  $('aBody').innerHTML=L.length?L.map(m=>{const c=catInfo(m.cat);return `<tr><td>${fmt(m.data)}</td><td class="l">${esc(m.desc)}</td><td class="l">${esc(c.emoji)} ${esc(c.nome)}</td><td class="l">${tipoNome[m.tipo]||''}</td><td class="${m.tipo==='in'?'pos':'neg'}">${brl(m.valor)}</td></tr>`}).join(''):'<tr><td colspan="5" class="l vazio">Nenhum lançamento com esses filtros.</td></tr>';
+}
+
+// tooltip
+const tip=$('tip');
+document.addEventListener('mousemove',e=>{
+  const el=e.target.closest&&e.target.closest('[data-tip]');
+  if(!el){tip.hidden=true;return;}
+  tip.textContent=el.dataset.tip; tip.hidden=false;
+  const r=tip.getBoundingClientRect();
+  let x=e.clientX+12, yy=e.clientY+14; if(x+r.width>innerWidth-8)x=e.clientX-r.width-12; if(yy+r.height>innerHeight-8)yy=e.clientY-r.height-12;
+  tip.style.left=x+'px'; tip.style.top=yy+'px';
+});
+document.addEventListener('touchstart',e=>{const el=e.target.closest&&e.target.closest('[data-tip]');if(!el){tip.hidden=true;return;}const t0=e.touches[0];tip.textContent=el.dataset.tip;tip.hidden=false;tip.style.left=Math.max(8,Math.min(t0.clientX-60,innerWidth-260))+'px';tip.style.top=(t0.clientY-44)+'px';},{passive:true});
 </script>
 </body>
 </html>
