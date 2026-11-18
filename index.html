@@ -176,7 +176,7 @@ main{grid-template-columns:minmax(0,1fr)}.card,.charts>*{min-width:0}
       <div><label>Descrição</label><input id="mDesc" placeholder="Ex.: Almoço, Uber, Salário" required autocomplete="off"></div>
       <div><label>Categoria</label><select id="mCat"></select></div>
       <div><label>De quem</label><select id="mQuem"><option value="carlos">🙋‍♂️ Carlos</option><option value="geovanna">🙋‍♀️ Geovanna</option><option value="casal">👫 Casal</option></select></div>
-      <div id="mPagBox"><label>Pagamento</label><select id="mPag"><option value="pix">⚡ PIX</option><option value="debito">💳 Débito</option><option value="credito">💳 Crédito</option></select></div>
+      <div id="mPagBox"><label>Pagamento</label><select id="mPag"><option value="pix">⚡ PIX</option><option value="debito">💳 Débito</option><option value="credito">💳 Crédito</option><option value="va">🍽️ Vale Alimentação</option></select></div>
       <div><label>Valor (R$)</label><input id="mVal" type="number" step="0.01" min="0" inputmode="decimal" required></div>
       <button type="submit">Adicionar</button>
     </form>
@@ -419,7 +419,7 @@ const KW={
 const padrao=()=>({saldo:0,diario:21.5,inicio:iso(new Date()),dias:15,movs:[],v:5,inv:invDef(),hist:{},cats:DEF_CATS.map(c=>({...c})),catsIn:DEF_CATS_IN.map(c=>({...c}))});
 const tipoNome={gasto:'gasto do dia',in:'entrada',out:'saída fixa'};
 const QUEM={carlos:{nome:'Carlos',emoji:'🙋‍♂️'},geovanna:{nome:'Geovanna',emoji:'🙋‍♀️'},casal:{nome:'Casal',emoji:'👫'}};
-const PAG={pix:{nome:'PIX',emoji:'⚡'},debito:{nome:'Débito',emoji:'💳'},credito:{nome:'Crédito',emoji:'💳'},none:{nome:'—',emoji:''}};
+const PAG={pix:{nome:'PIX',emoji:'⚡'},debito:{nome:'Débito',emoji:'💳'},credito:{nome:'Crédito',emoji:'💳'},va:{nome:'Vale Alimentação',emoji:'🍽️'},none:{nome:'—',emoji:''}};
 const quemDe=m=>m.quem||'carlos';
 const pagDe=m=>m.tipo==='in'?'none':(m.pag||'pix');
 let state=padrao(), ref=null, unsub=null, timer=null;
@@ -623,7 +623,7 @@ function render(){
   const lista=$('lista'); lista.innerHTML='';
   [...state.movs].reverse().forEach(m=>{
     const li=document.createElement('li'); const sinal=m.tipo==='in'?'+':'−';
-    li.innerHTML=`<div>${esc(m.desc)}<span class="tag">${tipoNome[m.tipo]||esc(m.tipo)}</span><br><small>${fmt(m.data)}</small> <select title="Categoria"></select><select title="De quem">${Object.entries(QUEM).map(([k,q])=>`<option value="${k}">${q.emoji} ${q.nome}</option>`).join('')}</select>${m.tipo!=='in'?`<select title="Pagamento">${['pix','debito','credito'].map(k=>`<option value="${k}">${PAG[k].emoji} ${PAG[k].nome}</option>`).join('')}</select>`:''}</div><div style="display:flex;gap:8px;align-items:center"><b class="${m.tipo==='in'?'pos':'neg'}">${sinal} ${brl(m.valor)}</b><button class="ghost" type="button" title="Excluir">✕</button></div>`;
+    li.innerHTML=`<div>${esc(m.desc)}<span class="tag">${tipoNome[m.tipo]||esc(m.tipo)}</span><br><small>${fmt(m.data)}</small> <select title="Categoria"></select><select title="De quem">${Object.entries(QUEM).map(([k,q])=>`<option value="${k}">${q.emoji} ${q.nome}</option>`).join('')}</select>${m.tipo!=='in'?`<select title="Pagamento">${['pix','debito','credito','va'].map(k=>`<option value="${k}">${PAG[k].emoji} ${PAG[k].nome}</option>`).join('')}</select>`:''}</div><div style="display:flex;gap:8px;align-items:center"><b class="${m.tipo==='in'?'pos':'neg'}">${sinal} ${brl(m.valor)}</b><button class="ghost" type="button" title="Excluir">✕</button></div>`;
     const sel=li.querySelector('select'); opcoesCat(sel,m.tipo,m.cat||'none'); sel.value=m.cat||'none';
     sel.onchange=()=>mudarCat(m.id,sel.value);
     const sels=li.querySelectorAll('select');
@@ -691,7 +691,7 @@ function render(){
 }
 
 // ---------- análise ----------
-const fCats=new Set(); let fCatsAll=true; const fQuem=new Set(Object.keys(QUEM)), fPag=new Set(['pix','debito','credito','none']); let ordem={k:'data',dir:-1};
+const fCats=new Set(); let fCatsAll=true; const fQuem=new Set(Object.keys(QUEM)), fPag=new Set(['pix','debito','credito','va','none']); let ordem={k:'data',dir:-1};
 const addDias=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return iso(d)};
 const nDias=(a,b)=>Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5)+1;
 ['fPer','fTipo','fDe','fAte'].forEach(id=>$(id).addEventListener('change',()=>{
@@ -738,7 +738,7 @@ function renderAnalise(){
   const chipsSet=(el,set,opts)=>{ const bx=$(el); bx.innerHTML=''; opts.forEach(([k,o])=>{ const s=document.createElement('span'); s.className='chip tog'+(set.has(k)?' on':''); s.textContent=`${o.emoji} ${o.nome}`; s.onclick=()=>{ set.has(k)?set.delete(k):set.add(k); renderAnalise(); }; bx.appendChild(s); }); };
   chipsSet('fQuem',fQuem,Object.entries(QUEM));
   $('fPag').parentElement.hidden=t==='in';
-  chipsSet('fPag',fPag,['pix','debito','credito'].map(k=>[k,PAG[k]]));
+  chipsSet('fPag',fPag,['pix','debito','credito','va'].map(k=>[k,PAG[k]]));
   const passa=(m,a,b)=>m.data>=a&&m.data<=b&&tipoOk(m,t)&&ativa(m.cat||'none')&&fQuem.has(quemDe(m))&&(t==='in'||fPag.has(pagDe(m)))&&(!busca||norm(m.desc).includes(busca));
   const F=state.movs.filter(m=>passa(m,de,ate));
   const total=F.reduce((a,m)=>a+m.valor,0);
