@@ -329,7 +329,13 @@ main{grid-template-columns:minmax(0,1fr)}.card,.charts>*{min-width:0}
     <div class="kpi"><span>Enviado por Carlos</span><b id="iCarlos" class="pos">–</b></div>
     <div class="kpi"><span>Enviado por Geovanna</span><b id="iGeo" class="pos">–</b></div>
     <div class="kpi"><span>Total retirado</span><b id="iRet" class="neg">–</b></div>
-    <div class="kpi"><span>Rendimentos</span><b id="iRend" class="pos">–</b></div>
+    <div class="kpi"><span>Rendimentos lançados</span><b id="iRend" class="pos">–</b></div>
+  </section>
+  <section class="kpis4">
+    <div class="kpi main"><span>Rendimento estimado (por dia útil)</span><b id="iEst" class="pos">–</b><small id="iEstSub"></small></div>
+    <div class="kpi"><span>Rende por dia útil (hoje)</span><b id="iDia" class="pos">–</b><small id="iDiaSub"></small></div>
+    <div class="kpi"><span>Saldo estimado com rendimento</span><b id="iSaldoEst">–</b><small id="iSaldoEstSub"></small></div>
+    <div class="kpi"><span>Dias úteis rendendo</span><b id="iDu">–</b><small id="iDuSub"></small></div>
   </section>
 
   <section class="card">
@@ -364,7 +370,10 @@ main{grid-template-columns:minmax(0,1fr)}.card,.charts>*{min-width:0}
       <div class="grid">
         <div><label>Meta (R$)</label><input id="iMetaIn" type="number" step="0.01"></div>
         <div><label>Mês final</label><input id="iFimIn" type="month"></div>
+        <div><label>CDI (% ao ano)</label><input id="iCdiIn" type="number" step="0.01" min="0" inputmode="decimal"></div>
+        <div><label>Rende (% do CDI)</label><input id="iPctIn" type="number" step="1" min="0" inputmode="decimal"></div>
       </div>
+      <p class="hint">O rendimento estimado é calculado por dia útil (sem fins de semana e feriados nacionais), só sobre o que está em renda fixa. É uma estimativa antes do IR — o valor oficial é o que o banco mostra (lance-o como "Rendimento").</p>
       <p class="hint">O valor esperado de cada mês você edita no cronograma abaixo.</p>
       <h3 class="sub">Extrato da caixinha</h3>
       <ul id="iLista" class="mov"></ul>
@@ -971,7 +980,34 @@ function svgBarras(itens,rotulo){
 }
 
 // =================== INVESTIMENTOS ===================
-function invDef(){ return {meta:30000,fim:'2027-12',taxa:0.0094,movs:[],plano:{}}; }
+function invDef(){ return {meta:30000,fim:'2027-12',taxa:0.0094,cdi:13.65,pctCdi:100,movs:[],plano:{}}; }
+// ---- rendimento diário (dias úteis) ----
+const _feriados={};
+function feriadosAno(y){
+  if(_feriados[y])return _feriados[y];
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451);
+  const mes=Math.floor((h+l-7*m+114)/31),dia=((h+l-7*m+114)%31)+1; const pas=new Date(y,mes-1,dia);
+  const rel=n=>{const x=new Date(pas);x.setDate(x.getDate()+n);return iso(x);};
+  const set=new Set(['01-01','04-21','05-01','09-07','10-12','11-02','11-15','11-20','12-25'].map(md=>y+'-'+md));
+  [-48,-47,-2,60].forEach(n=>set.add(rel(n))); // carnaval (seg/ter), sexta-feira santa, Corpus Christi
+  return _feriados[y]=set;
+}
+function diaUtil(dt){ const w=dt.getDay(); return w!==0&&w!==6&&!feriadosAno(dt.getFullYear()).has(iso(dt)); }
+function rendDiario(inv){
+  const taxaDia=(Math.pow(1+(+inv.cdi||0)/100,1/252)-1)*((+inv.pctCdi||0)/100);
+  const movs=inv.movs.filter(m=>m.tipo==='retirada'||(m.tipo==='aporte'&&m.classe!=='variavel')).sort((a,b)=>a.data.localeCompare(b.data));
+  const r={taxaDia,saldo:0,principal:0,du:0,desde:null};
+  if(!movs.length)return r;
+  const porDia={}; movs.forEach(m=>{(porDia[m.data]=porDia[m.data]||[]).push(m);});
+  const hoje=iso(new Date()); const dt=new Date(movs[0].data+'T12:00:00'); r.desde=movs[0].data; let guard=0;
+  while(guard++<4000){
+    const k=iso(dt); if(k>hoje)break;
+    (porDia[k]||[]).forEach(m=>{ if(m.tipo==='aporte'){r.saldo+=m.valor;r.principal+=m.valor;} else {const v=Math.min(m.valor,Math.max(0,r.saldo)); r.saldo-=v; r.principal-=v;} });
+    if(k<hoje&&diaUtil(dt)&&r.saldo>0){ r.saldo*=1+taxaDia; r.du++; }
+    dt.setDate(dt.getDate()+1);
+  }
+  r.rend=r.saldo-r.principal; return r;
+}
 function invTotais(){
   const inv=state.inv||invDef(); const t={carlos:0,geovanna:0,ret:0,rend:0,aportes:0,primeiro:null};
   inv.movs.forEach(m=>{ if(m.tipo==='aporte'){t[m.quem==='geovanna'?'geovanna':'carlos']+=m.valor;t.aportes+=m.valor;const k=m.data.slice(0,7);if(!t.primeiro||k<t.primeiro)t.primeiro=k;}
@@ -994,6 +1030,14 @@ function renderInv(){
   const essPrev=(state.cats||[]).filter(c=>c.ess).reduce((a,c)=>a+(+c.prev||0),0), reserva=6*essPrev, disp=t.saldo-reserva;
   $('iDisp').textContent=brl(disp); $('iDisp').className=disp<0?'neg':'pos'; $('iDispSub').textContent=`saldo − reserva de emergência ideal (${brl(reserva)})`;
   $('iCarlos').textContent=brl(t.carlos); $('iGeo').textContent=brl(t.geovanna); $('iRet').textContent=brl(t.ret); $('iRend').textContent=brl(t.rend);
+  if(inv.cdi==null)inv.cdi=13.65; if(inv.pctCdi==null)inv.pctCdi=100;
+  if(document.activeElement!==$('iCdiIn'))$('iCdiIn').value=inv.cdi;
+  if(document.activeElement!==$('iPctIn'))$('iPctIn').value=inv.pctCdi;
+  { const rd=rendDiario(inv); const pctD=(rd.taxaDia*100).toFixed(4).replace('.',',');
+    $('iEst').textContent=brl(rd.rend); $('iEstSub').textContent=`${String(inv.pctCdi).replace('.',',')}% do CDI (${String(inv.cdi).replace('.',',')}% a.a.) · antes do IR`+(t.rend?` · lançado: ${brl(t.rend)}`:'');
+    $('iDia').textContent=brl(rd.saldo*rd.taxaDia); $('iDiaSub').textContent=`${pctD}% ao dia útil sobre ${brl(rd.saldo)}`;
+    $('iSaldoEst').textContent=brl(rd.saldo); $('iSaldoEstSub').textContent=`renda fixa: aplicado ${brl(rd.principal)} + rendimento estimado`;
+    $('iDu').textContent=String(rd.du); $('iDuSub').textContent=rd.desde?`desde ${fmt(rd.desde)}`:'sem aportes em renda fixa'; }
 
   // extrato
   $('iLista').innerHTML=''; [...inv.movs].sort((a,b)=>b.data.localeCompare(a.data)||b.id-a.id).forEach(m=>{
@@ -1056,6 +1100,8 @@ $('formInv').addEventListener('submit',e=>{
 $('iCen').addEventListener('change',()=>{state.inv.taxa=parseFloat($('iCen').value);salvar();renderInv();});
 $('iMetaIn').addEventListener('change',()=>{state.inv.meta=Math.max(0,parseFloat($('iMetaIn').value)||0);salvar();renderInv();});
 $('iFimIn').addEventListener('change',()=>{if($('iFimIn').value){state.inv.fim=$('iFimIn').value;salvar();renderInv();}});
+$('iCdiIn').addEventListener('change',()=>{state.inv.cdi=Math.max(0,parseFloat($('iCdiIn').value)||0);salvar();renderInv();});
+$('iPctIn').addEventListener('change',()=>{state.inv.pctCdi=Math.max(0,parseFloat($('iPctIn').value)||0);salvar();renderInv();});
 
 // =================== IMPORTAR DADOS (JSON) ===================
 $('impFile').addEventListener('change',async()=>{
@@ -1065,7 +1111,7 @@ $('impFile').addEventListener('change',async()=>{
     if(d.cats)Object.entries(d.cats).forEach(([id,o])=>{const c=state.cats.find(x=>x.id===id);if(c)Object.assign(c,o);});
     if(d.catsIn)Object.entries(d.catsIn).forEach(([id,o])=>{const c=state.catsIn.find(x=>x.id===id);if(c)Object.assign(c,o);});
     if(d.hist){state.hist=state.hist||{};Object.entries(d.hist).forEach(([m,o])=>state.hist[m]=Object.assign(state.hist[m]||{},o));}
-    if(d.inv){const inv=state.inv; ['meta','fim','taxa'].forEach(k=>{if(d.inv[k]!=null)inv[k]=d.inv[k]});
+    if(d.inv){const inv=state.inv; ['meta','fim','taxa','cdi','pctCdi'].forEach(k=>{if(d.inv[k]!=null)inv[k]=d.inv[k]});
       if(d.inv.plano)Object.assign(inv.plano,d.inv.plano);
       if(d.inv.movs){const ids=new Set(inv.movs.map(m=>m.id));d.inv.movs.forEach(m=>{if(!ids.has(m.id))inv.movs.push(m)});}}
     salvar(); render(); msg.textContent='✔ Dados importados.'; msg.className='pos';
